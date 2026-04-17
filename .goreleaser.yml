@@ -1,0 +1,35 @@
+version: 2
+
+builds:
+  - main: ./cmd/neeto-cli-gen/
+    binary: neeto-cli-gen
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/neetozone/neeto-cli-template/internal/version.Version={{.Version}}
+      - -X github.com/neetozone/neeto-cli-template/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/neetozone/neeto-cli-template/internal/version.Date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+release:
+  name_template: "v{{ .Version }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

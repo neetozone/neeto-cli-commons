@@ -1,0 +1,19 @@
+pretty_name: TestApp
+binary_name: testapp
+github_org: neetozone
+repo_name: testapp-cli
+module_path: github.com/neetozone/testapp-cli
+company_name: BigBinary
+support_email: support@bigbinary.com
+short_description: TestApp CLI
+long_description: A command-line interface for TestApp.
+domain: testapp.com
+api_base_path: /api/external/v2
+env_var: TESTAPP_BASE_URL
+config_dir: .config/testapp
+homebrew_tap: neetozone/homebrew-tap
+s3_bucket: neeto-downloads
+s3_path_prefix: cli/TestApp
+go_version: 1.26.1
+run_tidy: false
+run_git_init: false

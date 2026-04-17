@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+export PATH="$HOME/.local/share/mise/shims:$HOME/go/bin:/usr/local/go/bin:/opt/homebrew/bin:$PATH"
+
+echo "Running fmt..."
+make fmt
+
+if ! git diff --quiet; then
+    echo "Error: 'make fmt' modified files. Stage the changes and try again."
+    exit 1
+fi
+
+echo "Running vet..."
+make vet
+
+echo "Running tests..."
+make test
+
+echo "All checks passed."

@@ -1,0 +1,156 @@
+# Adding product-specific commands
+
+This CLI ships with the generic infrastructure — login/logout/whoami,
+version, doctor, setup, a commands catalog, `--json`/`--quiet`/`--toon`
+output, and a full HTTP client. All you need to add is the resource
+commands specific to {{.PrettyName}}.
+
+## 1. Create a command file
+
+Create a new file in `internal/commands/`, e.g. `widgets.go`:
+
+```go
+package commands
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"{{.ModulePath}}/internal/output"
+	"github.com/spf13/cobra"
+)
+
+var widgetsCmd = &cobra.Command{
+	Use:   "widgets",
+	Short: "Manage widgets",
+}
+
+var widgetsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List widgets",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		data, err := c.Get("/widgets", paginationParams(cmd))
+		if err != nil {
+			return err
+		}
+
+		printList(data, "widgets", []output.Breadcrumb{
+			{Label: "Show", Command: "{{.BinaryName}} widgets show <sid>"},
+		})
+		return nil
+	},
+}
+
+var widgetsShowCmd = &cobra.Command{
+	Use:   "show <sid>",
+	Short: "Show a widget",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		data, err := c.Get(fmt.Sprintf("/widgets/%s", args[0]), nil)
+		if err != nil {
+			return err
+		}
+
+		printResource(data, nil)
+		return nil
+	},
+}
+
+var widgetsCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create a widget",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		name, _ := cmd.Flags().GetString("name")
+		body := map[string]interface{}{"name": name}
+
+		data, err := c.Post("/widgets", body)
+		if err != nil {
+			return err
+		}
+
+		printActionResult(data, nil)
+		return nil
+	},
+}
+
+var widgetsDeleteCmd = &cobra.Command{
+	Use:   "delete <sid>",
+	Short: "Delete a widget",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		if err := c.Delete(fmt.Sprintf("/widgets/%s", args[0])); err != nil {
+			return err
+		}
+
+		output.PrintMessage("Widget deleted.")
+		return nil
+	},
+}
+
+var _ = json.RawMessage{} // placeholder; remove if you import json elsewhere
+
+func init() {
+	addPaginationFlags(widgetsListCmd)
+
+	widgetsCreateCmd.Flags().String("name", "", "Widget name")
+	_ = widgetsCreateCmd.MarkFlagRequired("name")
+
+	widgetsCmd.AddCommand(widgetsListCmd)
+	widgetsCmd.AddCommand(widgetsShowCmd)
+	widgetsCmd.AddCommand(widgetsCreateCmd)
+	widgetsCmd.AddCommand(widgetsDeleteCmd)
+	rootCmd.AddCommand(widgetsCmd)
+}
+```
+
+## 2. Rebuild
+
+```bash
+make build
+./{{.BinaryName}} widgets list --help
+```
+
+## 3. Pattern reminders
+
+- **Always use `getClient(cmd)`** — it resolves the `--subdomain` flag and
+  loads credentials for you.
+- **Always use `printList` / `printResource` / `printActionResult`** so
+  every new command respects `--json`, `--quiet`, and `--toon`.
+- **Create flags with `MarkFlagRequired`** for required params. `commands`
+  catalog will report them correctly.
+- **Breadcrumbs** (`output.Breadcrumb`) steer agents to the next useful
+  command; include them on `list`/`show` results.
+
+## 4. Running against a local server
+
+```bash
+export {{.EnvVar}}=http://acme.lvh.me:8980
+./{{.BinaryName}} login --subdomain acme
+./{{.BinaryName}} widgets list
+```
+
+## 5. Testing
+
+Add unit tests next to your command file, or integration tests under
+`internal/commands/` using `httptest.NewServer` as shown in
+`internal/client/client_test.go`.

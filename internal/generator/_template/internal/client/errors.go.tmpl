@@ -1,0 +1,84 @@
+package client
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+type APIError struct {
+	StatusCode int
+	Message    string
+	Errors     []string
+	Suggestion string
+}
+
+func (e *APIError) Error() string {
+	msg := fmt.Sprintf("API error (%d): %s", e.StatusCode, e.Message)
+	for _, detail := range e.Errors {
+		msg += "\n  - " + detail
+	}
+	if e.Suggestion != "" {
+		msg += "\n\nSuggestion: " + e.Suggestion
+	}
+	return msg
+}
+
+func parseAPIError(statusCode int, body []byte) *APIError {
+	apiErr := &APIError{StatusCode: statusCode}
+
+	var parsed struct {
+		Error  string   `json:"error"`
+		Errors []string `json:"errors"`
+		Notice string   `json:"notice"`
+	}
+	if err := json.Unmarshal(body, &parsed); err == nil {
+		if parsed.Error != "" {
+			apiErr.Message = parsed.Error
+		} else if parsed.Notice != "" {
+			apiErr.Message = parsed.Notice
+		} else if len(parsed.Errors) > 0 {
+			apiErr.Message = parsed.Errors[0]
+			apiErr.Errors = parsed.Errors[1:]
+		}
+	}
+
+	if apiErr.Message == "" {
+		apiErr.Message = http_status_text(statusCode)
+	}
+
+	switch statusCode {
+	case 401:
+		apiErr.Suggestion = "Session expired. Run '{{.BinaryName}} login' to re-authenticate."
+	case 403:
+		apiErr.Suggestion = "You do not have permission to perform this action."
+	case 404:
+		apiErr.Suggestion = "Resource not found. Check the ID and try again."
+	case 422:
+		apiErr.Suggestion = "Check required fields with '{{.BinaryName}} <command> --help'."
+	case 429:
+		apiErr.Suggestion = "Rate limited. Wait and try again."
+	}
+
+	return apiErr
+}
+
+func http_status_text(code int) string {
+	switch code {
+	case 400:
+		return "Bad Request"
+	case 401:
+		return "Unauthorized"
+	case 403:
+		return "Forbidden"
+	case 404:
+		return "Not Found"
+	case 422:
+		return "Unprocessable Entity"
+	case 429:
+		return "Too Many Requests"
+	case 500:
+		return "Internal Server Error"
+	default:
+		return fmt.Sprintf("HTTP %d", code)
+	}
+}

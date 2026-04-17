@@ -1,0 +1,49 @@
+package commands
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"{{.ModulePath}}/internal/auth"
+	"github.com/spf13/cobra"
+)
+
+var doctorCmd = &cobra.Command{
+	Use:   "doctor",
+	Short: "Check CLI health and connectivity",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Check credentials
+		subdomain, _ := cmd.Flags().GetString("subdomain")
+		creds, err := auth.SelectCredentials(subdomain)
+		if err != nil {
+			fmt.Printf("✗ Authentication: %v\n", err)
+			return nil
+		}
+		fmt.Printf("✓ Authentication: logged in as %s on %s.{{.Domain}}\n", creds.Email, creds.Subdomain)
+
+		// Check connectivity
+		baseURL := auth.BaseURL(creds.Subdomain)
+		httpClient := &http.Client{Timeout: 10 * time.Second}
+		start := time.Now()
+		resp, err := httpClient.Get(baseURL)
+		elapsed := time.Since(start)
+
+		if err != nil {
+			fmt.Printf("✗ API connection: could not reach %s\n", baseURL)
+			fmt.Printf("  Error: %v\n", err)
+		} else {
+			resp.Body.Close()
+			fmt.Printf("✓ API connection: %s (responding in %dms)\n", baseURL, elapsed.Milliseconds())
+		}
+
+		// Check version
+		fmt.Printf("✓ CLI version: %s\n", Version)
+
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(doctorCmd)
+}

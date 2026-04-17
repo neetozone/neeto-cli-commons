@@ -1,0 +1,137 @@
+package auth
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func TestBaseURL_Default(t *testing.T) {
+	t.Setenv("{{.EnvVar}}", "")
+
+	got := BaseURL("acme")
+	want := "https://acme.{{.Domain}}"
+	if got != want {
+		t.Errorf("BaseURL(\"acme\") = %q, want %q", got, want)
+	}
+}
+
+func TestBaseURL_Override(t *testing.T) {
+	t.Setenv("{{.EnvVar}}", "http://acme.lvh.me:8980")
+
+	got := BaseURL("acme")
+	want := "http://acme.lvh.me:8980"
+	if got != want {
+		t.Errorf("BaseURL(\"acme\") = %q, want %q", got, want)
+	}
+}
+
+func TestBaseURL_OverrideStripsTrailingSlash(t *testing.T) {
+	t.Setenv("{{.EnvVar}}", "http://acme.lvh.me:8980/")
+
+	got := BaseURL("acme")
+	want := "http://acme.lvh.me:8980"
+	if got != want {
+		t.Errorf("BaseURL(\"acme\") = %q, want %q", got, want)
+	}
+}
+
+func TestCreateSession(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/cli/v1/sessions" {
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+		if r.Method != "POST" {
+			t.Errorf("unexpected method %q", r.Method)
+		}
+		if err := json.NewEncoder(w).Encode(map[string]string{"login_token": "abc123"}); err != nil {
+			t.Errorf("encode error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	token, err := createSession(server.URL)
+	if err != nil {
+		t.Fatalf("createSession() error = %v", err)
+	}
+	if token != "abc123" {
+		t.Errorf("createSession() = %q, want %q", token, "abc123")
+	}
+}
+
+func TestCreateSession_ServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	_, err := createSession(server.URL)
+	if err == nil {
+		t.Error("createSession() expected error for 500 response")
+	}
+}
+
+func TestCheckStatus_Authenticated(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/cli/v1/sessions/tok123/status" {
+			t.Errorf("unexpected path %q", r.URL.Path)
+		}
+		if err := json.NewEncoder(w).Encode(map[string]string{
+			"status":        "authenticated",
+			"email":         "alice@example.com",
+			"session_token": "sess_xyz",
+		}); err != nil {
+			t.Errorf("encode error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	status, email, sessionToken, err := checkStatus(server.URL, "tok123")
+	if err != nil {
+		t.Fatalf("checkStatus() error = %v", err)
+	}
+	if status != "authenticated" {
+		t.Errorf("status = %q, want %q", status, "authenticated")
+	}
+	if email != "alice@example.com" {
+		t.Errorf("email = %q, want %q", email, "alice@example.com")
+	}
+	if sessionToken != "sess_xyz" {
+		t.Errorf("sessionToken = %q, want %q", sessionToken, "sess_xyz")
+	}
+}
+
+func TestCheckStatus_Pending(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "pending"}); err != nil {
+			t.Errorf("encode error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	status, _, _, err := checkStatus(server.URL, "tok123")
+	if err != nil {
+		t.Fatalf("checkStatus() error = %v", err)
+	}
+	if status != "pending" {
+		t.Errorf("status = %q, want %q", status, "pending")
+	}
+}
+
+func TestCheckStatus_Expired(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "expired"}); err != nil {
+			t.Errorf("encode error: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	status, _, _, err := checkStatus(server.URL, "tok123")
+	if err != nil {
+		t.Fatalf("checkStatus() error = %v", err)
+	}
+	if status != "expired" {
+		t.Errorf("status = %q, want %q", status, "expired")
+	}
+}

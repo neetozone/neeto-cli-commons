@@ -1,0 +1,16 @@
+#!/bin/sh
+# {{.PrettyName}} CLI — session-start hook for Claude Code
+# Lightweight auth liveness check. Always exits 0 (informational).
+
+if ! command -v {{.BinaryName}} >/dev/null 2>&1; then
+  echo "{{.PrettyName}} CLI is not installed or not on PATH."
+  exit 0
+fi
+
+if {{.BinaryName}} whoami >/dev/null 2>&1; then
+  echo "{{.PrettyName}} plugin active."
+else
+  echo "{{.PrettyName}} CLI installed but not authenticated. Run '{{.BinaryName}} login' to authenticate."
+fi
+
+exit 0

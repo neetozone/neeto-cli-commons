@@ -1,0 +1,16 @@
+version: v1.0
+
+fail_fast: true
+
+plan: pro
+
+machine_type: multi
+
+commands:
+  - checkout
+  - neetoci-version go 1.26
+  - bash ./.scripts/release.sh
+
+triggers:
+  - event: branch
+    branch_name: main

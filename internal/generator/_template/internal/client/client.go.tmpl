@@ -1,0 +1,113 @@
+package client
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"time"
+
+	"{{.ModulePath}}/internal/auth"
+)
+
+var version = "dev"
+
+func SetVersion(v string) {
+	version = v
+}
+
+type Client struct {
+	BaseURL      string
+	SessionToken string
+	HTTPClient   *http.Client
+}
+
+func New(creds *auth.Credentials) *Client {
+	return &Client{
+		BaseURL:      auth.BaseURL(creds.Subdomain) + "{{.ApiBasePath}}",
+		SessionToken: creds.SessionToken,
+		HTTPClient:   &http.Client{Timeout: 30 * time.Second},
+	}
+}
+
+func (c *Client) Get(path string, params url.Values) (json.RawMessage, error) {
+	u := c.BaseURL + path
+	if len(params) > 0 {
+		u += "?" + params.Encode()
+	}
+
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(req)
+}
+
+func (c *Client) Post(path string, body interface{}) (json.RawMessage, error) {
+	return c.doWithBody("POST", path, body)
+}
+
+func (c *Client) Put(path string, body interface{}) (json.RawMessage, error) {
+	return c.doWithBody("PUT", path, body)
+}
+
+func (c *Client) Patch(path string, body interface{}) (json.RawMessage, error) {
+	return c.doWithBody("PATCH", path, body)
+}
+
+func (c *Client) Delete(path string) error {
+	req, err := http.NewRequest("DELETE", c.BaseURL+path, nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.do(req)
+	return err
+}
+
+func (c *Client) doWithBody(method, path string, body interface{}) (json.RawMessage, error) {
+	var buf bytes.Buffer
+	if body != nil {
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			return nil, fmt.Errorf("could not encode request body: %w", err)
+		}
+	}
+
+	req, err := http.NewRequest(method, c.BaseURL+path, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(req)
+}
+
+func (c *Client) do(req *http.Request) (json.RawMessage, error) {
+	req.Header.Set("Session-Token", c.SessionToken)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "{{.BinaryName}}-cli/"+version)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to {{.PrettyName}}. Check your internet connection: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not read response: %w", err)
+	}
+
+	if resp.StatusCode == http.StatusNoContent {
+		return nil, nil
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, parseAPIError(resp.StatusCode, respBody)
+	}
+
+	return json.RawMessage(respBody), nil
+}
