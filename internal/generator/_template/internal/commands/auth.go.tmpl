@@ -33,7 +33,7 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 
-		output.PrintMessage(fmt.Sprintf("Logged in as %s on %s.{{.Domain}}", creds.Email, creds.Subdomain))
+		output.PrintMessage(fmt.Sprintf("Logged in as %s on %s", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
 		return nil
 	},
 }
@@ -79,7 +79,7 @@ var logoutCmd = &cobra.Command{
 			return err
 		}
 
-		output.PrintMessage(fmt.Sprintf("Logged out of %s.{{.Domain}}.", subdomain))
+		output.PrintMessage(fmt.Sprintf("Logged out of %s.", hostFromBaseURL(auth.BaseURL(subdomain), subdomain)))
 		return nil
 	},
 }
@@ -105,19 +105,19 @@ var whoamiCmd = &cobra.Command{
 				return fmt.Errorf("not logged in to %q. Logged in subdomains: %s",
 					subdomain, strings.Join(store.Subdomains(), ", "))
 			}
-			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s.{{.Domain}}", creds.Email, creds.Subdomain))
+			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
 			return nil
 		}
 
 		if len(store.Credentials) == 1 {
 			c := store.Credentials[0]
-			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s.{{.Domain}} (default)", c.Email, c.Subdomain))
+			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s (default)", c.Email, hostFromBaseURL(auth.BaseURL(c.Subdomain), c.Subdomain)))
 			return nil
 		}
 
 		lines := make([]string, 0, len(store.Credentials))
 		for _, c := range store.Credentials {
-			lines = append(lines, fmt.Sprintf("%s on %s.{{.Domain}}", c.Email, c.Subdomain))
+			lines = append(lines, fmt.Sprintf("%s on %s", c.Email, hostFromBaseURL(auth.BaseURL(c.Subdomain), c.Subdomain)))
 		}
 		output.PrintMessage(strings.Join(lines, "\n"))
 		return nil

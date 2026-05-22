@@ -15,9 +15,11 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "{{.BinaryName}}",
-	Short: "{{.ShortDescription}}",
-	Long:  "{{.LongDescription}}",
+	Use:           "{{.BinaryName}}",
+	Short:         "{{.ShortDescription}}",
+	Long:          "{{.LongDescription}}",
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		jsonFlag, _ := cmd.Flags().GetBool("json")
 		quietFlag, _ := cmd.Flags().GetBool("quiet")
