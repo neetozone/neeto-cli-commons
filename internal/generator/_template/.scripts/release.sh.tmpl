@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+LAST_COMMIT_MSG=$(git log -1 --format="%s")
+if echo "$LAST_COMMIT_MSG" | grep -q "^Bump version to "; then
+  echo "Last commit is an automated version bump. Skipping release to prevent infinite loop."
+  exit 0
+fi
+
 type -p curl >/dev/null || sudo apt install curl -y
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
 sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
