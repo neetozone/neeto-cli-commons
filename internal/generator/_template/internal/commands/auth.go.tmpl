@@ -13,7 +13,7 @@ import (
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Log in to {{.PrettyName}} via browser",
+	Short: "Authenticate to {{.PrettyName}} via browser",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		subdomain, _ := cmd.Flags().GetString("subdomain")
 
@@ -25,7 +25,7 @@ var loginCmd = &cobra.Command{
 		}
 
 		if subdomain == "" {
-			return fmt.Errorf("subdomain is required")
+			return fmt.Errorf("Subdomain is required.")
 		}
 
 		creds, err := auth.Login(subdomain)
@@ -33,14 +33,14 @@ var loginCmd = &cobra.Command{
 			return err
 		}
 
-		output.PrintMessage(fmt.Sprintf("Logged in as %s on %s", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
+		output.PrintMessage(fmt.Sprintf("Authenticated as %s on %s.", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
 		return nil
 	},
 }
 
 var logoutCmd = &cobra.Command{
 	Use:   "logout",
-	Short: "Log out and clear saved credentials",
+	Short: "Sign out and clear saved credentials",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		subdomain, _ := cmd.Flags().GetString("subdomain")
 		all, _ := cmd.Flags().GetBool("all")
@@ -51,7 +51,7 @@ var logoutCmd = &cobra.Command{
 		}
 
 		if len(store.Credentials) == 0 {
-			output.PrintMessage("Not logged in.")
+			output.PrintMessage("Not authenticated.")
 			return nil
 		}
 
@@ -60,26 +60,26 @@ var logoutCmd = &cobra.Command{
 			if err := auth.SaveStore(store); err != nil {
 				return err
 			}
-			output.PrintMessage("Logged out of all subdomains.")
+			output.PrintMessage("Signed out of all subdomains.")
 			return nil
 		}
 
 		if subdomain == "" {
 			if len(store.Credentials) > 1 {
-				return fmt.Errorf("multiple subdomains logged in (%s); specify --subdomain or --all",
+				return fmt.Errorf("Multiple subdomains authenticated (%s); specify --subdomain or --all.",
 					strings.Join(store.Subdomains(), ", "))
 			}
 			subdomain = store.Credentials[0].Subdomain
 		}
 
 		if !store.Remove(subdomain) {
-			return fmt.Errorf("not logged in to %q", subdomain)
+			return fmt.Errorf("Not authenticated for %q.", subdomain)
 		}
 		if err := auth.SaveStore(store); err != nil {
 			return err
 		}
 
-		output.PrintMessage(fmt.Sprintf("Logged out of %s.", hostFromBaseURL(auth.BaseURL(subdomain), subdomain)))
+		output.PrintMessage(fmt.Sprintf("Signed out of %s.", hostFromBaseURL(auth.BaseURL(subdomain), subdomain)))
 		return nil
 	},
 }
@@ -96,22 +96,22 @@ var whoamiCmd = &cobra.Command{
 		}
 
 		if len(store.Credentials) == 0 {
-			return fmt.Errorf("not logged in. Run '{{.BinaryName}} login' to authenticate")
+			return fmt.Errorf("Not authenticated. Run '{{.BinaryName}} login' to authenticate.")
 		}
 
 		if subdomain != "" {
 			creds, ok := store.Find(subdomain)
 			if !ok {
-				return fmt.Errorf("not logged in to %q. Logged in subdomains: %s",
+				return fmt.Errorf("Not authenticated for %q. Authenticated subdomains: %s.",
 					subdomain, strings.Join(store.Subdomains(), ", "))
 			}
-			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
+			output.PrintMessage(fmt.Sprintf("Authenticated as %s on %s.", creds.Email, hostFromBaseURL(auth.BaseURL(creds.Subdomain), creds.Subdomain)))
 			return nil
 		}
 
 		if len(store.Credentials) == 1 {
 			c := store.Credentials[0]
-			output.PrintMessage(fmt.Sprintf("Logged in as %s on %s (default)", c.Email, hostFromBaseURL(auth.BaseURL(c.Subdomain), c.Subdomain)))
+			output.PrintMessage(fmt.Sprintf("Authenticated as %s on %s (default).", c.Email, hostFromBaseURL(auth.BaseURL(c.Subdomain), c.Subdomain)))
 			return nil
 		}
 
@@ -125,7 +125,7 @@ var whoamiCmd = &cobra.Command{
 }
 
 func init() {
-	logoutCmd.Flags().Bool("all", false, "Log out of every saved subdomain")
+	logoutCmd.Flags().Bool("all", false, "Sign out of every saved subdomain")
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(whoamiCmd)
