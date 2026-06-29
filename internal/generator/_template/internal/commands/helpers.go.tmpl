@@ -64,11 +64,11 @@ func addPaginationFlags(cmd *cobra.Command) {
 func readJSONFile(path string) (map[string]interface{}, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("could not read file %s: %w", path, err)
+		return nil, fmt.Errorf("Could not read file %s: %w", path, err)
 	}
 	var result map[string]interface{}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("invalid JSON in %s: %w", path, err)
+		return nil, fmt.Errorf("Invalid JSON in %s: %w", path, err)
 	}
 	return result, nil
 }

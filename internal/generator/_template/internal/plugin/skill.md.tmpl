@@ -16,13 +16,13 @@ Credentials for every logged-in subdomain are stored together in
 `~/{{.ConfigDir}}/auth.json`. A command that talks to the API picks which
 subdomain to use by these rules:
 
-- 0 subdomains logged in → every credential-using command errors with
-  "not logged in. Run '{{.BinaryName}} login' to authenticate".
-- 1 subdomain logged in → that one is the implicit default; `--subdomain`
+- 0 subdomains authenticated → every credential-using command errors with
+  "Not authenticated. Run '{{.BinaryName}} login' to authenticate.".
+- 1 subdomain authenticated → that one is the implicit default; `--subdomain`
   may be omitted.
-- 2+ subdomains logged in → **`--subdomain <name>` is required** on every
+- 2+ subdomains authenticated → **`--subdomain <name>` is required** on every
   credential-using command, including `doctor`. The error lists every
-  logged-in subdomain so the agent can offer a choice.
+  authenticated subdomain so the agent can offer a choice.
 
 `login` / `logout` / `whoami` have dedicated behavior:
 
@@ -118,9 +118,9 @@ export {{.EnvVar}}=http://acme.lvh.me:8980
 Every command exits non-zero on failure and writes a single-line message to
 stderr. Common errors the agent should expect:
 
-- `not logged in. Run '{{.BinaryName}} login' to authenticate` — empty credential store.
-- `multiple subdomains logged in (acme, beta); specify --subdomain` — pick one.
-- `not logged in to "foo". Logged in subdomains: acme, beta` — bad `--subdomain`.
+- `Not authenticated. Run '{{.BinaryName}} login' to authenticate.` — empty credential store.
+- `Multiple subdomains authenticated (acme, beta); specify --subdomain.` — pick one.
+- `Not authenticated for "foo". Authenticated subdomains: acme, beta.` — bad `--subdomain`.
 - `required flag(s) "xxx" not set` (from cobra) — missing required flag.
 - API errors come through with the server's message body; inspect the
   JSON envelope (or the `--quiet` payload) for `error` / `errors` / `notice`

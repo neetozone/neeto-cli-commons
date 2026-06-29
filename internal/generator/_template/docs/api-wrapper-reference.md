@@ -11,9 +11,9 @@ auth.Login(subdomain string) (*auth.Credentials, error)
 
 // SelectCredentials returns the credentials a command should use.
 //   - subdomain != ""   : the matching entry (error if missing).
-//   - subdomain == ""   : the one entry if exactly one is logged in.
-//   - subdomain == "" + >1 logged in : error asking for --subdomain.
-//   - empty store       : "not logged in" error.
+//   - subdomain == ""   : the one entry if exactly one is authenticated.
+//   - subdomain == "" + >1 authenticated : error asking for --subdomain.
+//   - empty store       : "Not authenticated" error.
 auth.SelectCredentials(subdomain string) (*auth.Credentials, error)
 
 // Store manipulation (rarely needed by command code).
