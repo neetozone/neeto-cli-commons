@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -57,6 +58,44 @@ func TestCreateSession(t *testing.T) {
 	}
 	if token != "abc123" {
 		t.Errorf("createSession() = %q, want %q", token, "abc123")
+	}
+}
+
+func TestCreateSession_SubdomainNotFound_Redirect(t *testing.T) {
+	errorPage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if _, err := w.Write([]byte("<!DOCTYPE html><html><body>error</body></html>")); err != nil {
+			t.Errorf("write error: %v", err)
+		}
+	}))
+	defer errorPage.Close()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, errorPage.URL+"/error", http.StatusFound)
+	}))
+	defer server.Close()
+
+	_, err := createSession(server.URL)
+	if err == nil {
+		t.Fatal("createSession() expected error for unknown subdomain")
+	}
+	if !strings.Contains(err.Error(), "Subdomain not found") {
+		t.Errorf("createSession() error = %q, want it to mention %q", err.Error(), "Subdomain not found")
+	}
+}
+
+func TestCreateSession_SubdomainNotFound_NotFoundStatus(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	_, err := createSession(server.URL)
+	if err == nil {
+		t.Fatal("createSession() expected error for 404 response")
+	}
+	if !strings.Contains(err.Error(), "Subdomain not found") {
+		t.Errorf("createSession() error = %q, want it to mention %q", err.Error(), "Subdomain not found")
 	}
 }
 
