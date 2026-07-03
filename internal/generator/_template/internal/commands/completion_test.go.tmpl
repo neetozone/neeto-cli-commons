@@ -1,0 +1,194 @@
+package commands
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestInstallZshWritesScriptAndWiresRc(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var out bytes.Buffer
+	if err := installCompletion(rootCmd, "zsh", &out); err != nil {
+		t.Fatalf("installCompletion returned error: %v", err)
+	}
+
+	script := filepath.Join(home, ".config", "{{.BinaryName}}", "completions", "_{{.BinaryName}}")
+	data, err := os.ReadFile(script)
+	if err != nil {
+		t.Fatalf("expected completion script at %s: %v", script, err)
+	}
+	if !strings.HasPrefix(string(data), "#compdef {{.BinaryName}}") {
+		t.Fatalf("script missing zsh compdef header, got: %.40q", string(data))
+	}
+
+	rc, err := os.ReadFile(filepath.Join(home, ".zshrc"))
+	if err != nil {
+		t.Fatalf("expected .zshrc to be created: %v", err)
+	}
+	for _, want := range []string{"# {{.BinaryName}} completions", "# end {{.BinaryName}} completions", `fpath=("$HOME/.config/{{.BinaryName}}/completions" $fpath)`} {
+		if !strings.Contains(string(rc), want) {
+			t.Fatalf(".zshrc missing %q:\n%s", want, rc)
+		}
+	}
+	if !strings.Contains(out.String(), "added to") {
+		t.Fatalf("first install should report loader added, got: %s", out.String())
+	}
+}
+
+func TestReinstallRefreshesWithoutDuplicating(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if err := installCompletion(rootCmd, "zsh", &bytes.Buffer{}); err != nil {
+		t.Fatalf("first install error: %v", err)
+	}
+	var out bytes.Buffer
+	if err := installCompletion(rootCmd, "zsh", &out); err != nil {
+		t.Fatalf("second install error: %v", err)
+	}
+
+	rc, _ := os.ReadFile(filepath.Join(home, ".zshrc"))
+	if n := strings.Count(string(rc), "# {{.BinaryName}} completions"); n != 1 {
+		t.Fatalf("expected start marker exactly once, found %d:\n%s", n, rc)
+	}
+	if !strings.Contains(out.String(), "refreshed in") {
+		t.Fatalf("re-run should report loader refreshed, got: %s", out.String())
+	}
+}
+
+func TestReinstallRestoresTamperedConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	if err := installCompletion(rootCmd, "zsh", &bytes.Buffer{}); err != nil {
+		t.Fatalf("install error: %v", err)
+	}
+
+	script := filepath.Join(home, ".config", "{{.BinaryName}}", "completions", "_{{.BinaryName}}")
+	rcPath := filepath.Join(home, ".zshrc")
+	if err := os.WriteFile(script, []byte("garbage"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(rcPath, []byte("# {{.BinaryName}} completions\ngarbage-line\n# end {{.BinaryName}} completions\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := installCompletion(rootCmd, "zsh", &bytes.Buffer{}); err != nil {
+		t.Fatalf("reinstall error: %v", err)
+	}
+
+	data, _ := os.ReadFile(script)
+	if !strings.HasPrefix(string(data), "#compdef {{.BinaryName}}") {
+		t.Fatalf("script was not regenerated, got: %.40q", string(data))
+	}
+	rc, _ := os.ReadFile(rcPath)
+	if strings.Contains(string(rc), "garbage-line") {
+		t.Fatalf("stale block not overwritten:\n%s", rc)
+	}
+	if !strings.Contains(string(rc), `fpath=("$HOME/.config/{{.BinaryName}}/completions" $fpath)`) {
+		t.Fatalf("fresh block not written:\n%s", rc)
+	}
+	if n := strings.Count(string(rc), "# {{.BinaryName}} completions"); n != 1 {
+		t.Fatalf("expected start marker exactly once, found %d:\n%s", n, rc)
+	}
+}
+
+func TestInstallPreservesExistingRcContent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	rcPath := filepath.Join(home, ".zshrc")
+	if err := os.WriteFile(rcPath, []byte("export EDITOR=vim\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := installCompletion(rootCmd, "zsh", &bytes.Buffer{}); err != nil {
+		t.Fatalf("install error: %v", err)
+	}
+	rc, _ := os.ReadFile(rcPath)
+	if !strings.Contains(string(rc), "export EDITOR=vim") {
+		t.Fatalf("existing rc content was lost:\n%s", rc)
+	}
+	if !strings.Contains(string(rc), "# {{.BinaryName}} completions") {
+		t.Fatalf("marker not appended:\n%s", rc)
+	}
+}
+
+func TestInstallFishNeedsNoRcEdit(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if err := installCompletion(rootCmd, "fish", &bytes.Buffer{}); err != nil {
+		t.Fatalf("install error: %v", err)
+	}
+	script := filepath.Join(home, ".config", "fish", "completions", "{{.BinaryName}}.fish")
+	if _, err := os.Stat(script); err != nil {
+		t.Fatalf("expected fish completion at %s: %v", script, err)
+	}
+}
+
+func TestInstallReportsReRunTip(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	var out bytes.Buffer
+	if err := installCompletion(rootCmd, "zsh", &out); err != nil {
+		t.Fatalf("install error: %v", err)
+	}
+	if !strings.Contains(out.String(), "Re-run") || !strings.Contains(out.String(), "latest commands") {
+		t.Fatalf("output should nudge re-running to stay current, got: %s", out.String())
+	}
+}
+
+func TestGenerateWritesEachShell(t *testing.T) {
+	for _, shell := range completionShells {
+		var buf bytes.Buffer
+		if err := generateCompletion(rootCmd, shell, &buf); err != nil {
+			t.Fatalf("generate %s error: %v", shell, err)
+		}
+		if buf.Len() == 0 {
+			t.Fatalf("generate %s produced empty script", shell)
+		}
+	}
+}
+
+func TestPrintDoesNotTouchFilesystem(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	var buf bytes.Buffer
+	if err := generateCompletion(rootCmd, "zsh", &buf); err != nil {
+		t.Fatalf("generate error: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(home, ".config")); !os.IsNotExist(err) {
+		t.Fatalf("print path should not create ~/.config, stat err: %v", err)
+	}
+}
+
+func TestPrintFlagOnCommandWritesNoFiles(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	cmd, _, err := rootCmd.Find([]string{"completion", "zsh"})
+	if err != nil || cmd.Name() != "zsh" {
+		t.Fatalf("completion zsh command not found: %v", err)
+	}
+	if err := cmd.Flags().Set("print", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = cmd.Flags().Set("print", "false") }()
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("running completion zsh --print: %v", err)
+	}
+	if out.Len() == 0 {
+		t.Fatal("expected the completion script on stdout")
+	}
+	if _, err := os.Stat(filepath.Join(home, ".config")); !os.IsNotExist(err) {
+		t.Fatalf("--print via the command must not create ~/.config, stat err: %v", err)
+	}
+}

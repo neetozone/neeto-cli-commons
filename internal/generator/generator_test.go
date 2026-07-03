@@ -40,6 +40,7 @@ func TestGenerateAndBuild(t *testing.T) {
 		"internal/client/client.go",
 		"internal/commands/root.go",
 		"internal/commands/auth.go",
+		"internal/commands/completion.go",
 		"internal/commands/setup.go",
 		"internal/output/output.go",
 		"internal/plugin/embed.go",
