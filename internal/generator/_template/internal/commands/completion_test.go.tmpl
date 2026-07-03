@@ -166,3 +166,29 @@ func TestPrintDoesNotTouchFilesystem(t *testing.T) {
 		t.Fatalf("print path should not create ~/.config, stat err: %v", err)
 	}
 }
+
+func TestPrintFlagOnCommandWritesNoFiles(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	cmd, _, err := rootCmd.Find([]string{"completion", "zsh"})
+	if err != nil || cmd.Name() != "zsh" {
+		t.Fatalf("completion zsh command not found: %v", err)
+	}
+	if err := cmd.Flags().Set("print", "true"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = cmd.Flags().Set("print", "false") }()
+
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatalf("running completion zsh --print: %v", err)
+	}
+	if out.Len() == 0 {
+		t.Fatal("expected the completion script on stdout")
+	}
+	if _, err := os.Stat(filepath.Join(home, ".config")); !os.IsNotExist(err) {
+		t.Fatalf("--print via the command must not create ~/.config, stat err: %v", err)
+	}
+}
