@@ -4,6 +4,12 @@ fail_fast: true
 
 plan: pro
 
+paths:
+  - "**/*.go"
+  - go.mod
+  - go.sum
+  - .neetoci/default.yml
+
 machine_type: multi
 
 commands:
