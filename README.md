@@ -2,11 +2,12 @@
 
 Template repository and generator for building product CLIs that follow the
 `neeto-cal-cli` architecture: Cobra-based command tree, browser login with
-multi-subdomain support, HTTP client, `--json`/`--quiet`/`--toon` output, Claude
-plugin scaffolding, `.neetoci` release pipeline, and cross-platform installers.
+multi-subdomain support, HTTP client, `--json`/`--quiet`/`--toon` output,
+Claude plugin scaffolding, `.neetoci` release pipeline, and cross-platform
+installers.
 
-Running the generator produces a **brand new repository** ready to be filled in
-with product-specific commands. The generator never modifies an existing
+Running the generator produces a **brand new repository** ready to be filled
+in with product-specific commands. The generator never modifies an existing
 directory.
 
 ## Install
@@ -50,8 +51,6 @@ make check       # fmt + vet + test
 
 ## Docs
 
-- [`docs/generator-usage.md`](docs/generator-usage.md) — generator CLI
-  reference
-- [`docs/template-architecture.md`](docs/template-architecture.md) — how
-  `template/` renders
+- [`docs/generator-usage.md`](docs/generator-usage.md) — generator CLI reference
+- [`docs/template-architecture.md`](docs/template-architecture.md) — how `template/` renders
 - [`docs/releasing.md`](docs/releasing.md) — cutting a new template version
