@@ -31,14 +31,14 @@ var updateCmd = &cobra.Command{
 func resolveUpdate(goos string, homebrew bool) (method, command string) {
 	switch {
 	case goos == "windows":
-		return "Windows", fmt.Sprintf(`powershell -NoProfile -Command "irm %s | iex"`, installPS1URL)
+		return "Windows", fmt.Sprintf("irm %s | iex", installPS1URL)
 	case homebrew:
 		return "Homebrew", fmt.Sprintf("brew update && brew upgrade %s", brewFormula)
 	default:
 		// Download to a temp file before executing so a failed download
 		// (404/DNS) surfaces as a non-zero exit instead of being swallowed
 		// by the pipe (`curl | sh` reports sh's exit code, not curl's).
-		return "shell-script", fmt.Sprintf(`f="$(mktemp)" && curl -fsSL %s -o "$f" && sh "$f"`, installShURL)
+		return "shell-script", fmt.Sprintf(`f="$(mktemp)" && trap 'rm -f "$f"' EXIT && curl -fsSL %s -o "$f" && sh "$f"`, installShURL)
 	}
 }
 
@@ -59,7 +59,7 @@ func isHomebrewInstall() bool {
 func runShell(command string) error {
 	var c *exec.Cmd
 	if runtime.GOOS == "windows" {
-		c = exec.Command("cmd", "/c", command)
+		c = exec.Command("powershell", "-NoProfile", "-Command", command)
 	} else {
 		c = exec.Command("sh", "-c", command)
 	}

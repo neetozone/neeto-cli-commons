@@ -142,7 +142,7 @@ func TestGenerateAndBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("commands failed: %v\n%s", err, cat)
 	}
-	for _, want := range []string{"testapp login", "testapp logout", "testapp whoami", "testapp doctor", "testapp setup", "testapp version"} {
+	for _, want := range []string{"testapp login", "testapp logout", "testapp whoami", "testapp doctor", "testapp setup", "testapp version", "testapp update"} {
 		if !strings.Contains(string(cat), want) {
 			t.Errorf("catalog missing %q", want)
 		}
