@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"{{.ModulePath}}/internal/output"
 	"github.com/spf13/cobra"
@@ -40,6 +41,29 @@ func init() {
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		if isUsageError(err) {
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", rootCmd.Name())
+		}
 		os.Exit(1)
 	}
+}
+
+func isUsageError(err error) bool {
+	msg := err.Error()
+	prefixes := []string{
+		"unknown flag",
+		"unknown shorthand flag",
+		"unknown command",
+		"invalid argument",
+		"flag needs an argument",
+		"required flag",
+		"requires at least",
+		"accepts ",
+	}
+	for _, p := range prefixes {
+		if strings.HasPrefix(msg, p) {
+			return true
+		}
+	}
+	return false
 }

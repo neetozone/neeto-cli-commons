@@ -41,6 +41,7 @@ func TestGenerateAndBuild(t *testing.T) {
 		"internal/commands/root.go",
 		"internal/commands/auth.go",
 		"internal/commands/completion.go",
+		"internal/commands/update.go",
 		"internal/commands/setup.go",
 		"internal/output/output.go",
 		"internal/plugin/embed.go",
@@ -51,7 +52,7 @@ func TestGenerateAndBuild(t *testing.T) {
 		".neetoci/default.yml",
 		".neetoci/release.yml",
 		".claude-plugin/plugin.json",
-		".claude-plugin/hooks/session-start.sh",
+		"hooks/session-start.sh",
 		".template-version",
 		"VERSION",
 		"Makefile",
@@ -68,7 +69,7 @@ func TestGenerateAndBuild(t *testing.T) {
 	execFiles := []string{
 		".scripts/release.sh",
 		".githooks/pre-commit",
-		".claude-plugin/hooks/session-start.sh",
+		"hooks/session-start.sh",
 		"bin/setup",
 		"installers/install.sh",
 	}
@@ -141,7 +142,7 @@ func TestGenerateAndBuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("commands failed: %v\n%s", err, cat)
 	}
-	for _, want := range []string{"testapp login", "testapp logout", "testapp whoami", "testapp doctor", "testapp setup", "testapp version"} {
+	for _, want := range []string{"testapp login", "testapp logout", "testapp whoami", "testapp doctor", "testapp setup", "testapp version", "testapp update"} {
 		if !strings.Contains(string(cat), want) {
 			t.Errorf("catalog missing %q", want)
 		}
