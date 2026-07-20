@@ -1,0 +1,74 @@
+package commands
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	"github.com/spf13/cobra"
+)
+
+const (
+	brewFormula   = "{{.HomebrewTap}}/{{.BinaryName}}"
+	installShURL  = "https://{{.S3Bucket}}.s3.amazonaws.com/{{.S3PathPrefix}}/latest/install.sh"
+	installPS1URL = "https://{{.S3Bucket}}.s3.amazonaws.com/{{.S3PathPrefix}}/latest/install.ps1"
+)
+
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update the CLI to the latest version",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		method, command := resolveUpdate(runtime.GOOS, isHomebrewInstall())
+		fmt.Printf("Detected %s install.\n", method)
+		fmt.Printf("Running: %s\n", command)
+		return runShell(command)
+	},
+}
+
+func resolveUpdate(goos string, homebrew bool) (method, command string) {
+	switch {
+	case goos == "windows":
+		return "Windows", fmt.Sprintf(`powershell -NoProfile -Command "irm %s | iex"`, installPS1URL)
+	case homebrew:
+		return "Homebrew", fmt.Sprintf("brew update && brew upgrade %s", brewFormula)
+	default:
+		// Download to a temp file before executing so a failed download
+		// (404/DNS) surfaces as a non-zero exit instead of being swallowed
+		// by the pipe (`curl | sh` reports sh's exit code, not curl's).
+		return "shell-script", fmt.Sprintf(`f="$(mktemp)" && curl -fsSL %s -o "$f" && sh "$f"`, installShURL)
+	}
+}
+
+// isHomebrewInstall reports whether the running binary lives inside a Homebrew
+// Cellar, which is the canonical marker of a formula-managed install on both
+// Apple Silicon (/opt/homebrew/Cellar) and Intel (/usr/local/Cellar).
+func isHomebrewInstall() bool {
+	exe, err := os.Executable()
+	if err != nil {
+		return false
+	}
+	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+		exe = resolved
+	}
+	return strings.Contains(exe, "/Cellar/")
+}
+
+func runShell(command string) error {
+	var c *exec.Cmd
+	if runtime.GOOS == "windows" {
+		c = exec.Command("cmd", "/c", command)
+	} else {
+		c = exec.Command("sh", "-c", command)
+	}
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	c.Stdin = os.Stdin
+	return c.Run()
+}
+
+func init() {
+	rootCmd.AddCommand(updateCmd)
+}

@@ -1,5 +1,5 @@
 .scripts/release.sh
 .githooks/pre-commit
-.claude-plugin/hooks/session-start.sh
+hooks/session-start.sh
 bin/setup
 installers/install.sh

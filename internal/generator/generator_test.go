@@ -41,6 +41,7 @@ func TestGenerateAndBuild(t *testing.T) {
 		"internal/commands/root.go",
 		"internal/commands/auth.go",
 		"internal/commands/completion.go",
+		"internal/commands/update.go",
 		"internal/commands/setup.go",
 		"internal/output/output.go",
 		"internal/plugin/embed.go",
@@ -51,7 +52,7 @@ func TestGenerateAndBuild(t *testing.T) {
 		".neetoci/default.yml",
 		".neetoci/release.yml",
 		".claude-plugin/plugin.json",
-		".claude-plugin/hooks/session-start.sh",
+		"hooks/session-start.sh",
 		".template-version",
 		"VERSION",
 		"Makefile",
@@ -68,7 +69,7 @@ func TestGenerateAndBuild(t *testing.T) {
 	execFiles := []string{
 		".scripts/release.sh",
 		".githooks/pre-commit",
-		".claude-plugin/hooks/session-start.sh",
+		"hooks/session-start.sh",
 		"bin/setup",
 		"installers/install.sh",
 	}
