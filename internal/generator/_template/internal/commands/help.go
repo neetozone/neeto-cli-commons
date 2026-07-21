@@ -34,13 +34,10 @@ const usageTemplate = `{{bold "USAGE"}}{{if .Runnable}}
   {{.NameAndAliases}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}
 
 {{bold "COMMANDS"}}{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableFlags}}
 
 {{bold "FLAGS"}}
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
-
-{{bold "GLOBAL FLAGS"}}
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasExample}}
+{{.Flags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasExample}}
 
 {{bold "EXAMPLES"}}
 {{.Example}}{{end}}{{if .HasHelpSubCommands}}
