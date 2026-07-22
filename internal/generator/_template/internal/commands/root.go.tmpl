@@ -16,9 +16,14 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "{{.BinaryName}}",
-	Short:         "{{.ShortDescription}}",
-	Long:          "{{.LongDescription}}",
+	Use:   "{{.BinaryName}}",
+	Short: "{{.ShortDescription}}",
+	Long:  "{{.LongDescription}}",
+	// Shown under EXAMPLES in the root help. These three exist in every CLI —
+	// replace them with the things people actually run in yours.
+	Example: "  $ {{.BinaryName}} login\n" +
+		"  $ {{.BinaryName}} whoami\n" +
+		"  $ {{.BinaryName}} doctor",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {

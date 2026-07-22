@@ -140,6 +140,23 @@ make build
   catalog will report them correctly.
 - **Breadcrumbs** (`output.Breadcrumb`) steer agents to the next useful
   command; include them on `list`/`show` results.
+- **Put examples in cobra's `Example` field, never in `Long`.** `Long` renders
+  above `USAGE`, `Example` renders below `FLAGS` under an `EXAMPLES` header.
+  Prefix each line with `$ `, and group them with `#` comments when there are
+  several:
+
+  ```go
+  Example: "  # List every widget\n" +
+      "  $ {{.BinaryName}} widgets list\n\n" +
+      "  # Only the archived ones\n" +
+      "  $ {{.BinaryName}} widgets list --archived",
+  ```
+
+- **Keep `Short` to one line.** It is a column in the root command list;
+  detail belongs in `Long`.
+- **Update the root command's `Example`** in `internal/commands/root.go` once
+  you have real commands — it ships with `login`/`whoami`/`doctor` as
+  placeholders. Those three lines are the first thing a new user reads.
 
 ## 4. Running against a local server
 
