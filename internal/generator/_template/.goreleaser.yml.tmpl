@@ -33,7 +33,7 @@ brews:
       name: {{.HomebrewTapName}}
       token: "{{"{{"}} .Env.TAP_GITHUB_TOKEN }}"
     commit_msg_template: "Brew formula update for {{"{{"}} .ProjectName }} version {{"{{"}} .Tag }}"
-    url_template: "https://{{.S3Bucket}}.s3.amazonaws.com/{{.S3PathPrefix}}/v{{"{{"}} .Version }}/{{"{{"}} .ArtifactName }}"
+    url_template: "https://downloads.neeto.com/{{.S3PathPrefix}}/v{{"{{"}} .Version }}/{{"{{"}} .ArtifactName }}"
     homepage: "https://{{.Domain}}"
     description: "{{.ShortDescription}}"
     install: |
