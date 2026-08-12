@@ -130,9 +130,9 @@ from an existing CLI project's neetoCI settings:
 
 | Variable | Used for |
 | --- | --- |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | uploading archives and installers to `s3://neeto-downloads/cli/<PrettyName>/` |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | uploading archives and installers to `s3://neeto-downloads/cli/<PrettyName>/`. Nothing in the generated repo sets a region, so `aws s3 cp` depends on it coming from the environment. |
 | `GITHUB_TOKEN` | creating the GitHub release via goreleaser |
-| `TAP_GITHUB_TOKEN` | pushing the formula to `neetozone/homebrew-tap`; falls back to `GITHUB_TOKEN` if unset |
+| `TAP_GITHUB_TOKEN` | pushing the formula to `neetozone/homebrew-tap`. Falls back to `GITHUB_TOKEN` when unset, which only works if that token can write to the tap repo as well as this one — a repo-scoped token will fail here. |
 
 Set these **before** merging anything with a version label. A merge without
 them still tags and pushes `v<version>`, then fails at goreleaser, leaving a
