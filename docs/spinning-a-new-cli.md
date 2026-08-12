@@ -162,9 +162,17 @@ Generated `VERSION` is `0.1.0`, so merging a PR labelled `major` produces
 
 ```bash
 brew install neetozone/homebrew-tap/neetoplanner
-curl -fsSL https://neeto-downloads.s3.amazonaws.com/cli/NeetoPlanner/latest/install.sh | sh
+curl -fsSL https://neetoplanner.com/cli/install.sh | sh
 neetoplanner version
 ```
+
+The generated README points users at `https://<domain>/cli/install.{sh,ps1,cmd}`,
+but `release.sh` only uploads those installers to
+`s3://neeto-downloads/cli/<PrettyName>/latest/`. Something has to serve the
+product-domain path from the bucket, and it is not a Rails route in the
+product's web repo — check how an existing CLI's domain is wired at the CDN
+and mirror it. Until that exists the shell installer 404s even though the
+release succeeded, so test the URL rather than assuming it resolves.
 
 ## Known gotchas
 
