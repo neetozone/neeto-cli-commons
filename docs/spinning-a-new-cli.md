@@ -8,7 +8,34 @@ For the flag-by-flag generator reference see
 [`generator-usage.md`](generator-usage.md). This document is the surrounding
 process — the repo, labels, CI and secrets the generator does *not* create.
 
-## 1. Build the generator
+## 1. Enable CLI routes in the product's web repo
+
+Do this first. It is a change to a different repo, so it needs its own PR and
+a deploy before anything the CLI does can work.
+
+The login flow posts to `/api/cli/v1/sessions`, which neeto-commons-backend
+mounts only when `:cli` is drawn. Check the product's `config/routes.rb`:
+
+```bash
+grep -n "Routes.draw :cli" config/routes.rb
+```
+
+If it is missing, add it alongside the other `Routes.draw` calls:
+
+```ruby
+NeetoCommonsBackend::Routes.draw :cli
+```
+
+That mounts the three endpoints login needs — `POST /api/cli/v1/sessions`,
+`POST /api/cli/v1/sessions/:login_token/status`, and `GET /api/cli/v1/login`.
+Confirm with `bundle exec rails routes | grep api/cli`.
+
+A missing `:cli` is worth catching early because the CLI hides it. Any 404 on
+that path is reported as `Subdomain not found`, so an unmounted route looks
+exactly like a typo in the subdomain. `neeto-planner-cli` shipped v1.0.0
+installable but unable to log in for this reason.
+
+## 2. Build the generator
 
 ```bash
 go install github.com/neetozone/neeto-cli-template/cmd/neeto-cli-gen@latest
@@ -21,7 +48,7 @@ template:
 make build      # produces ./neeto-cli-gen
 ```
 
-## 2. Write the answers file
+## 3. Write the answers file
 
 Prefer a YAML answers file over the interactive prompt — it is reviewable,
 and you will usually regenerate at least once.
@@ -68,7 +95,7 @@ Where the runtime values come from, using the product's web repo:
 | `api_base_path` | The versioned external API namespace, `app/controllers/api/external/v2/`. Current products are all on `/api/external/v2`. |
 | `s3_path_prefix` | `cli/<PrettyName>`, matching the siblings under `s3://neeto-downloads/cli/`. |
 
-## 3. Generate and verify
+## 4. Generate and verify
 
 ```bash
 neeto-cli-gen new --config answers.yml --output ./neeto-planner-cli --non-interactive
@@ -82,15 +109,16 @@ The generator refuses to write into a directory that already has files, so
 regenerating means deleting the output directory first.
 
 Before going further, confirm the login round-trip works against a real
-subdomain — it exercises the browser flow, the credential store and the base
-URL together, and it is the one thing a wrong `domain` value breaks:
+subdomain — it exercises the browser flow, the credential store, the base URL
+and the `:cli` routes from step 1 together, and it is the one thing a wrong
+`domain` value breaks:
 
 ```bash
 ./neetoplanner login
 ./neetoplanner whoami
 ```
 
-## 4. Create the GitHub repo
+## 5. Create the GitHub repo
 
 The fleet is private. `--source=.` wires the remote to the repo the generator
 already `git init`-ed.
@@ -105,7 +133,7 @@ Push the generated commit to `main` on its own, before any hand-written code.
 It keeps "what the template produced" separate from "what we wrote", which is
 what makes a later template upgrade diffable.
 
-## 5. Create the release labels
+## 6. Create the release labels
 
 ```bash
 gh label create major --description "Releases breaking changes." --color c4550b
@@ -118,7 +146,7 @@ pick the version bump and **exits successfully doing nothing** when no
 `major`/`minor`/`patch` label is present. A new repo has none of them, so
 without this step the first merge to `main` looks green and ships nothing.
 
-## 6. Wire up NeetoCI
+## 7. Wire up NeetoCI
 
 `.neetoci/verify.yml` and `.neetoci/release.yml` ship with the generated repo.
 Once `.neetoci/` is on `main`, NeetoCI picks the repo up on its own — the first
@@ -138,7 +166,7 @@ Set these **before** merging anything with a version label. A merge without
 them still tags and pushes `v<version>`, then fails at goreleaser, leaving a
 tag with no release behind it.
 
-## 7. Add the product commands
+## 8. Add the product commands
 
 Branch, then follow the generated `docs/adding-commands.md`. Two conventions
 worth keeping across the fleet:
@@ -155,7 +183,7 @@ waiting on. The surface becomes reviewable and the plugin skill can describe
 it. Say so in the README, and in `internal/plugin/skill.md` tell the agent not
 to treat those failures as bugs to work around.
 
-## 8. Cut the first release
+## 9. Cut the first release
 
 Generated `VERSION` is `0.1.0`, so merging a PR labelled `major` produces
 `v1.0.0`. Verify both install paths afterwards:
