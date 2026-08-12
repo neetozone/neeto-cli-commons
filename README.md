@@ -51,7 +51,7 @@ make check       # fmt + vet + test
 
 ## Docs
 
-- [`docs/spinning-a-new-cli.md`](docs/spinning-a-new-cli.md) — end-to-end checklist for standing up a new product CLI
+- [`docs/spinning-a-new-cli.md`](docs/spinning-a-new-cli.md) — end-to-end checklist for spinning a new product CLI
 - [`docs/generator-usage.md`](docs/generator-usage.md) — generator CLI reference
 - [`docs/template-architecture.md`](docs/template-architecture.md) — how `template/` renders
 - [`docs/releasing.md`](docs/releasing.md) — cutting a new template version

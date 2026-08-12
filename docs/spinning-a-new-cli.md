@@ -118,21 +118,21 @@ pick the version bump and **exits successfully doing nothing** when no
 `major`/`minor`/`patch` label is present. A new repo has none of them, so
 without this step the first merge to `main` looks green and ships nothing.
 
-## 6. Wire up neetoCI
+## 6. Wire up NeetoCI
 
 `.neetoci/verify.yml` and `.neetoci/release.yml` ship with the generated repo.
-Once `.neetoci/` is on `main`, neetoCI picks the repo up on its own — the first
+Once `.neetoci/` is on `main`, NeetoCI picks the repo up on its own — the first
 pull request gets a `ci/neeto-ci/pull_request/default` check without any
 dashboard registration.
 
-Releases need credentials that the generator cannot provision. Mirror them
-from an existing CLI project's neetoCI settings:
+Releases need credentials that the generator cannot provision. Open an
+existing CLI project in the NeetoCI dashboard — `neeto-desk-cli` or
+`neeto-cal-cli` — and copy its environment variables across:
 
 | Variable | Used for |
 | --- | --- |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | uploading archives and installers to `s3://neeto-downloads/cli/<PrettyName>/`. Nothing in the generated repo sets a region, so `aws s3 cp` depends on it coming from the environment. |
-| `GITHUB_TOKEN` | creating the GitHub release via goreleaser |
-| `TAP_GITHUB_TOKEN` | pushing the formula to `neetozone/homebrew-tap`. Falls back to `GITHUB_TOKEN` when unset, which only works if that token can write to the tap repo as well as this one — a repo-scoped token will fail here. |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | uploading archives and installers to `s3://neeto-downloads/cli/<PrettyName>/` |
+| `GITHUB_TOKEN` | creating the GitHub release via goreleaser, and pushing the formula to `neetozone/homebrew-tap` |
 
 Set these **before** merging anything with a version label. A merge without
 them still tags and pushes `v<version>`, then fails at goreleaser, leaving a
@@ -193,7 +193,3 @@ given template fix:
 ```bash
 cat neeto-planner-cli/.template-version
 ```
-
-**Version bumps are automated.** `.scripts/release.sh` rewrites `VERSION` and
-commits it as `Bump version to X.Y.Z`, then skips itself on that commit to
-avoid looping. Never bump `VERSION` by hand in a generated repo.
