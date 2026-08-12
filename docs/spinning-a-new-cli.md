@@ -173,23 +173,3 @@ product-domain path from the bucket, and it is not a Rails route in the
 product's web repo — check how an existing CLI's domain is wired at the CDN
 and mirror it. Until that exists the shell installer 404s even though the
 release succeeded, so test the URL rather than assuming it resolves.
-
-## Known gotchas
-
-**The generated scaffold does not pass `make lint`.** A freshly generated repo
-reports around 20 `golangci-lint` findings — unchecked `resp.Body.Close()`,
-capitalized error strings, and helpers in `internal/commands/helpers.go` that
-are unused until you add resource commands. `make check` and
-`.neetoci/verify.yml` run only fmt, vet and test, so this surfaces at the
-first commit, where the `.githooks/pre-commit` hook runs `make lint` and
-blocks. Until the template is cleaned up, commit the first product change with
-`--no-verify` rather than absorbing 20 unrelated fixes into a new repo and
-drifting it from the template.
-
-**`.template-version` records which generator built the repo.** It is not the
-repo's own version — that is `VERSION`. Check it before assuming a repo has a
-given template fix:
-
-```bash
-cat neeto-planner-cli/.template-version
-```
