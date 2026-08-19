@@ -383,7 +383,30 @@ func calculateWidths(headers []string, grid [][]string) []int {
 		widths[i] = min(widths[i], max(minColWidth, widths[i]*available/total))
 	}
 
-	return widths
+	return shrinkToFit(widths, available)
+}
+
+func shrinkToFit(widths []int, available int) []int {
+	for {
+		total := 0
+		for _, w := range widths {
+			total += w
+		}
+		if total <= available {
+			return widths
+		}
+
+		widest, target := 0, -1
+		for i, w := range widths {
+			if w > minColWidth && w > widest {
+				widest, target = w, i
+			}
+		}
+		if target < 0 {
+			return widths
+		}
+		widths[target]--
+	}
 }
 
 func printKeyValue(obj map[string]interface{}, rawData json.RawMessage) {

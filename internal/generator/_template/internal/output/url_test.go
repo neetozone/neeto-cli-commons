@@ -177,3 +177,33 @@ func TestKeyValue_NestedArrayURLIsNotHidden(t *testing.T) {
 		t.Errorf("key-value output = %q, want the URL inside the nested array", out)
 	}
 }
+func TestCalculateWidths_NeverOverflowsTheTerminal(t *testing.T) {
+	shapes := [][]int{
+		{2, 20, 130}, {3, 5, 40, 200}, {2, 2, 2, 150}, {4, 9, 9, 9, 120},
+		{200, 200, 200}, {1, 1}, {60, 60}, {5, 300}, {13, 13, 13, 13, 90},
+	}
+
+	for _, natural := range shapes {
+		headers := make([]string, len(natural))
+		row := make([]string, len(natural))
+		for i, n := range natural {
+			headers[i] = "H"
+			row[i] = strings.Repeat("x", n)
+		}
+
+		widths := calculateWidths(headers, [][]string{row})
+
+		line := (len(widths) - 1) * colPadding
+		floored := true
+		for i, w := range widths {
+			line += w
+			if w > minColWidth && w < natural[i] {
+				floored = false
+			}
+		}
+		if line > getTerminalWidth() && !floored {
+			t.Errorf("shape %v produced widths %v totalling %d, wider than the %d-column terminal",
+				natural, widths, line, getTerminalWidth())
+		}
+	}
+}
