@@ -265,7 +265,6 @@ func pickColumns(rows []map[string]interface{}) []string {
 		}
 	}
 
-	// URL columns are always kept: a truncated or missing link is unusable.
 	urlFields := map[string]bool{}
 	var urlCols []string
 	for _, row := range rows {
@@ -343,8 +342,6 @@ func calculateWidths(headers []string, grid [][]string) []int {
 		return widths
 	}
 
-	// URL columns keep their full width; the rest absorb the shortfall, but
-	// never shrink past minColWidth nor grow beyond what their content needs.
 	budget := max(0, available-(total-flexible))
 	for i := range widths {
 		if !protected[i] {
