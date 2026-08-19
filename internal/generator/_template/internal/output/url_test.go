@@ -110,3 +110,36 @@ func TestTruncate_KeepsAtLeastMinContentWidth(t *testing.T) {
 		}
 	}
 }
+
+func TestIsURL_SchemeIsCaseInsensitive(t *testing.T) {
+	for _, s := range []string{"https://example.com", "HTTPS://EXAMPLE.COM", "Http://Example.com"} {
+		if !isURL(s) {
+			t.Errorf("isURL(%q) = false, want true", s)
+		}
+	}
+	if isURL("nothttp://example.com") {
+		t.Error("isURL matched a string that does not start with a scheme")
+	}
+}
+
+func TestTable_URLColumnFoundWhenAbsentFromFirstRow(t *testing.T) {
+	resetModes()
+
+	data := json.RawMessage(`[{"id":"1","name":"no link"},{"id":"2","name":"has link","url":"` + longURL + `"}]`)
+	out := captureStdout(t, func() { printPretty(data) })
+
+	if !strings.Contains(out, longURL) {
+		t.Errorf("table output = %q, want the URL discovered on a later row", out)
+	}
+}
+
+func TestKeyValue_NestedArrayURLIsNotHidden(t *testing.T) {
+	resetModes()
+
+	data := json.RawMessage(`{"booking":{"id":"42","attachments":[{"name":"` + strings.Repeat("a", 90) + `","url":"` + longURL + `"}]}}`)
+	out := captureStdout(t, func() { printPretty(data) })
+
+	if !strings.Contains(out, longURL) {
+		t.Errorf("key-value output = %q, want the URL inside the nested array", out)
+	}
+}
