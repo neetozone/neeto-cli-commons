@@ -115,7 +115,8 @@ VERSION, runs GoReleaser, uploads artifacts to
 ```
 
 Every command except `setup claude` writes into the current project directory, so
-run these commands from the root of the project the assistant works in.
-`setup copilot`, `setup gemini` and `setup codex` keep the existing content of
-their file and, when re-run after an upgrade, replace the {{.PrettyName}} section instead
-of adding a duplicate.
+run these commands from the root of the project the assistant works in. Re-run
+them after every upgrade: `setup cursor` and `setup windsurf` overwrite their rule
+file, while `setup copilot`, `setup gemini` and `setup codex` keep the existing
+content of their file and replace only the {{.PrettyName}} section instead of adding a
+duplicate.

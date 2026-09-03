@@ -72,7 +72,7 @@ var setupCursorCmd = &cobra.Command{
 	Short: "Write {{.PrettyName}} rules for Cursor IDE",
 	Long:  ruleFileHelp(cursorRulesPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return writeCreateMode(cmd.OutOrStdout(), cursorRulesPath, cursorContent())
+		return writeRuleFile(cmd.OutOrStdout(), cursorRulesPath, cursorContent())
 	},
 }
 
@@ -95,7 +95,7 @@ var setupWindsurfCmd = &cobra.Command{
 	Short: "Write {{.PrettyName}} rules for Windsurf IDE",
 	Long:  ruleFileHelp(windsurfRulesPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return writeCreateMode(cmd.OutOrStdout(), windsurfRulesPath, windsurfContent())
+		return writeRuleFile(cmd.OutOrStdout(), windsurfRulesPath, windsurfContent())
 	},
 }
 
@@ -160,29 +160,29 @@ func sectionHelp(target string) string {
 func ruleFileHelp(target string) string {
 	return fmt.Sprintf(
 		"Write the {{.PrettyName}} rule file to %s in the current project directory.\n\n"+
-			"An existing file is left untouched. Delete it and re-run to regenerate it.",
+			"Re-running overwrites the file, so run it again after every upgrade to pick up the latest rules.",
 		target,
 	)
 }
 
 // --- Helpers ---
 
-// writeCreateMode writes a file, creating parent dirs. Skips if already present.
-func writeCreateMode(w io.Writer, target, content string) error {
-	if _, err := os.Stat(target); err == nil {
-		fmt.Fprintf(w, "Already installed: %s\n", target)
-		return nil
-	}
+func writeRuleFile(w io.Writer, target, content string) error {
+	_, statErr := os.Stat(target)
 
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(target, []byte(content), 0o644); err != nil {
+	if err := atomicWrite(target, []byte(content)); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(w, "Wrote %s\n", target)
+	if statErr == nil {
+		fmt.Fprintf(w, "Updated %s\n", target)
+	} else {
+		fmt.Fprintf(w, "Wrote %s\n", target)
+	}
 	return nil
 }
 

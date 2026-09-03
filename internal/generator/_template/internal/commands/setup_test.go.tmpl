@@ -120,3 +120,43 @@ func TestWriteSectionCreatesParentDirectories(t *testing.T) {
 		t.Fatalf("expected %s to be created: %v", target, err)
 	}
 }
+
+func TestWriteRuleFileCreatesFileWithContent(t *testing.T) {
+	target := filepath.Join(t.TempDir(), ".cursor", "rules", "rules.mdc")
+
+	var out bytes.Buffer
+	if err := writeRuleFile(&out, target, "first rules"); err != nil {
+		t.Fatalf("writeRuleFile returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("expected %s to be created: %v", target, err)
+	}
+	if string(data) != "first rules" {
+		t.Fatalf("unexpected content: %q", data)
+	}
+	if !strings.Contains(out.String(), "Wrote") {
+		t.Fatalf("first run should report the file was written, got: %s", out.String())
+	}
+}
+
+func TestWriteRuleFileOverwritesExistingFile(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "rules.md")
+	if err := writeRuleFile(&bytes.Buffer{}, target, "old rules"); err != nil {
+		t.Fatalf("first run error: %v", err)
+	}
+
+	var out bytes.Buffer
+	if err := writeRuleFile(&out, target, "new rules"); err != nil {
+		t.Fatalf("second run error: %v", err)
+	}
+
+	data, _ := os.ReadFile(target)
+	if string(data) != "new rules" {
+		t.Fatalf("re-run should overwrite the file, got: %q", data)
+	}
+	if !strings.Contains(out.String(), "Updated") {
+		t.Fatalf("re-run should report the file was updated, got: %s", out.String())
+	}
+}
