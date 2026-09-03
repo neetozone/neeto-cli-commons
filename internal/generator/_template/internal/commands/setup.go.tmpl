@@ -65,12 +65,14 @@ var setupClaudeCmd = &cobra.Command{
 
 // --- Cursor ---
 
+var cursorRulesPath = filepath.Join(".cursor", "rules", "{{.BinaryName}}.mdc")
+
 var setupCursorCmd = &cobra.Command{
 	Use:   "cursor",
 	Short: "Write {{.PrettyName}} rules for Cursor IDE",
+	Long:  ruleFileHelp(cursorRulesPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		target := filepath.Join(".cursor", "rules", "{{.BinaryName}}.mdc")
-		return writeCreateMode(target, cursorContent())
+		return writeCreateMode(cmd.OutOrStdout(), cursorRulesPath, cursorContent())
 	},
 }
 
@@ -86,12 +88,14 @@ func cursorContent() string {
 
 // --- Windsurf ---
 
+var windsurfRulesPath = filepath.Join(".windsurf", "rules", "{{.BinaryName}}.md")
+
 var setupWindsurfCmd = &cobra.Command{
 	Use:   "windsurf",
 	Short: "Write {{.PrettyName}} rules for Windsurf IDE",
+	Long:  ruleFileHelp(windsurfRulesPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		target := filepath.Join(".windsurf", "rules", "{{.BinaryName}}.md")
-		return writeCreateMode(target, windsurfContent())
+		return writeCreateMode(cmd.OutOrStdout(), windsurfRulesPath, windsurfContent())
 	},
 }
 
@@ -120,23 +124,27 @@ var setupCopilotCmd = &cobra.Command{
 
 // --- Gemini ---
 
+var geminiInstructionsPath = "GEMINI.md"
+
 var setupGeminiCmd = &cobra.Command{
 	Use:   "gemini",
 	Short: "Add {{.PrettyName}} instructions for Gemini CLI",
-	Long:  sectionHelp("GEMINI.md"),
+	Long:  sectionHelp(geminiInstructionsPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return writeSection(cmd.OutOrStdout(), "GEMINI.md", plugin.SkillBody())
+		return writeSection(cmd.OutOrStdout(), geminiInstructionsPath, plugin.SkillBody())
 	},
 }
 
 // --- Codex ---
 
+var codexInstructionsPath = "AGENTS.md"
+
 var setupCodexCmd = &cobra.Command{
 	Use:   "codex",
 	Short: "Add {{.PrettyName}} instructions for OpenAI Codex",
-	Long:  sectionHelp("AGENTS.md"),
+	Long:  sectionHelp(codexInstructionsPath),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return writeSection(cmd.OutOrStdout(), "AGENTS.md", plugin.SkillBody())
+		return writeSection(cmd.OutOrStdout(), codexInstructionsPath, plugin.SkillBody())
 	},
 }
 
@@ -149,12 +157,20 @@ func sectionHelp(target string) string {
 	)
 }
 
+func ruleFileHelp(target string) string {
+	return fmt.Sprintf(
+		"Write the {{.PrettyName}} rule file to %s in the current project directory.\n\n"+
+			"An existing file is left untouched. Delete it and re-run to regenerate it.",
+		target,
+	)
+}
+
 // --- Helpers ---
 
 // writeCreateMode writes a file, creating parent dirs. Skips if already present.
-func writeCreateMode(target, content string) error {
+func writeCreateMode(w io.Writer, target, content string) error {
 	if _, err := os.Stat(target); err == nil {
-		fmt.Printf("Already installed: %s\n", target)
+		fmt.Fprintf(w, "Already installed: %s\n", target)
 		return nil
 	}
 
@@ -166,7 +182,7 @@ func writeCreateMode(target, content string) error {
 		return err
 	}
 
-	fmt.Printf("Wrote %s\n", target)
+	fmt.Fprintf(w, "Wrote %s\n", target)
 	return nil
 }
 

@@ -192,3 +192,19 @@ func TestPrintFlagOnCommandWritesNoFiles(t *testing.T) {
 		t.Fatalf("--print via the command must not create ~/.config, stat err: %v", err)
 	}
 }
+
+func TestUpsertBlockRefusesUnterminatedBlock(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "rc")
+	original := "# begin block\nstale line\n\nexport EDITOR=vim\n"
+	if err := os.WriteFile(path, []byte(original), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := upsertBlock(path, "# begin block", "# end block", "fresh line"); err == nil {
+		t.Fatal("expected an error for a start marker without an end marker")
+	}
+	data, _ := os.ReadFile(path)
+	if string(data) != original {
+		t.Fatalf("file was modified despite the error:\n%s", data)
+	}
+}

@@ -83,7 +83,7 @@ func TestWriteSectionPreservesExistingContent(t *testing.T) {
 
 func TestWriteSectionReplacesStaleBlock(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "copilot-instructions.md")
-	stale := "# Notes\n\n<!-- {{.BinaryName}}:start -->\n## {{.PrettyName}} CLI\n\nstale body\n<!-- {{.BinaryName}}:end -->\n"
+	stale := "# Notes\n\n<!-- {{.BinaryName}}:start -->\n## {{.PrettyName}} CLI\n\nstale body\n<!-- {{.BinaryName}}:end -->\n\n## Testing\n\nRun make test.\n"
 	if err := os.WriteFile(target, []byte(stale), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -101,6 +101,12 @@ func TestWriteSectionReplacesStaleBlock(t *testing.T) {
 	}
 	if !strings.HasPrefix(string(data), "# Notes\n") {
 		t.Fatalf("content outside the block was lost:\n%s", data)
+	}
+	if !strings.Contains(string(data), "## Testing\n\nRun make test.\n") {
+		t.Fatalf("content after the block was lost:\n%s", data)
+	}
+	if strings.Index(string(data), "## Testing") > strings.Index(string(data), "<!-- {{.BinaryName}}:start -->", "## {{.PrettyName}} CLI", "body text", "<!-- {{.BinaryName}}:start -->") {
+		t.Fatalf("refreshed block should follow the rest of the file:\n%s", data)
 	}
 }
 

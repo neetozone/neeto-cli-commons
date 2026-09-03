@@ -130,6 +130,9 @@ func upsertBlock(path, start, end, body string) (bool, error) {
 			}
 			kept = append(kept, ln)
 		}
+		if inBlock {
+			return false, fmt.Errorf("%s has %q without a closing %q. Fix or remove the markers and re-run.", path, start, end)
+		}
 	}
 
 	for len(kept) > 0 && strings.TrimSpace(kept[len(kept)-1]) == "" {
