@@ -1,0 +1,116 @@
+package commands
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"{{.ModulePath}}/internal/plugin"
+)
+
+func TestWriteSectionCreatesFileWithMarkers(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "AGENTS.md")
+
+	var out bytes.Buffer
+	if err := writeSection(&out, target, "body text"); err != nil {
+		t.Fatalf("writeSection returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("expected %s to be created: %v", target, err)
+	}
+	for _, want := range []string{"<!-- {{.BinaryName}}:start -->", "## {{.PrettyName}} CLI", "body text", "<!-- {{.BinaryName}}:end -->"} {
+		if !strings.Contains(string(data), want) {
+			t.Fatalf("file missing %q:\n%s", want, data)
+		}
+	}
+	if !strings.Contains(out.String(), "Wrote") {
+		t.Fatalf("first run should report the file was written, got: %s", out.String())
+	}
+}
+
+func TestWriteSectionRerunDoesNotDuplicate(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "AGENTS.md")
+	body := plugin.SkillBody()
+
+	if err := writeSection(&bytes.Buffer{}, target, body); err != nil {
+		t.Fatalf("first run error: %v", err)
+	}
+	first, _ := os.ReadFile(target)
+
+	var out bytes.Buffer
+	if err := writeSection(&out, target, body); err != nil {
+		t.Fatalf("second run error: %v", err)
+	}
+	second, _ := os.ReadFile(target)
+
+	if !bytes.Equal(first, second) {
+		t.Fatalf("re-run changed the file from %d to %d bytes", len(first), len(second))
+	}
+	if n := strings.Count(string(second), "<!-- {{.BinaryName}}:start -->"); n != 1 {
+		t.Fatalf("expected start marker exactly once, found %d:\n%s", n, second)
+	}
+	if n := strings.Count(string(second), "## {{.PrettyName}} CLI"); n != 1 {
+		t.Fatalf("expected section heading exactly once, found %d", n)
+	}
+	if !strings.Contains(out.String(), "Updated") {
+		t.Fatalf("re-run should report the file was updated, got: %s", out.String())
+	}
+}
+
+func TestWriteSectionPreservesExistingContent(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "GEMINI.md")
+	existing := "# My project\n\nHouse rules for this repo.\n"
+	if err := os.WriteFile(target, []byte(existing), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := writeSection(&bytes.Buffer{}, target, "body text"); err != nil {
+		t.Fatalf("writeSection returned error: %v", err)
+	}
+
+	data, _ := os.ReadFile(target)
+	if !strings.HasPrefix(string(data), existing) {
+		t.Fatalf("existing content was not preserved at the top:\n%s", data)
+	}
+	if !strings.Contains(string(data), "## {{.PrettyName}} CLI\n\nbody text") {
+		t.Fatalf("section not appended after existing content:\n%s", data)
+	}
+}
+
+func TestWriteSectionReplacesStaleBlock(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "copilot-instructions.md")
+	stale := "# Notes\n\n<!-- {{.BinaryName}}:start -->\n## {{.PrettyName}} CLI\n\nstale body\n<!-- {{.BinaryName}}:end -->\n"
+	if err := os.WriteFile(target, []byte(stale), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := writeSection(&bytes.Buffer{}, target, "fresh body"); err != nil {
+		t.Fatalf("writeSection returned error: %v", err)
+	}
+
+	data, _ := os.ReadFile(target)
+	if strings.Contains(string(data), "stale body") {
+		t.Fatalf("stale block was not replaced:\n%s", data)
+	}
+	if !strings.Contains(string(data), "fresh body") {
+		t.Fatalf("fresh body not written:\n%s", data)
+	}
+	if !strings.HasPrefix(string(data), "# Notes\n") {
+		t.Fatalf("content outside the block was lost:\n%s", data)
+	}
+}
+
+func TestWriteSectionCreatesParentDirectories(t *testing.T) {
+	target := filepath.Join(t.TempDir(), ".github", "copilot-instructions.md")
+
+	if err := writeSection(&bytes.Buffer{}, target, "body text"); err != nil {
+		t.Fatalf("writeSection returned error: %v", err)
+	}
+	if _, err := os.Stat(target); err != nil {
+		t.Fatalf("expected %s to be created: %v", target, err)
+	}
+}

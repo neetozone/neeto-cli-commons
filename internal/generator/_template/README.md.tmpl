@@ -109,7 +109,12 @@ VERSION, runs GoReleaser, uploads artifacts to
 {{.BinaryName}} setup claude      # Register plugin with Claude Code
 {{.BinaryName}} setup cursor      # Write .cursor/rules/{{.BinaryName}}.mdc
 {{.BinaryName}} setup windsurf    # Write .windsurf/rules/{{.BinaryName}}.md
-{{.BinaryName}} setup copilot     # Append to .github/copilot-instructions.md
-{{.BinaryName}} setup gemini      # Append to GEMINI.md
-{{.BinaryName}} setup codex       # Append to AGENTS.md
+{{.BinaryName}} setup copilot     # Add a {{.PrettyName}} section to .github/copilot-instructions.md
+{{.BinaryName}} setup gemini      # Add a {{.PrettyName}} section to GEMINI.md
+{{.BinaryName}} setup codex       # Add a {{.PrettyName}} section to AGENTS.md
 ```
+
+Every command except `setup claude` writes into the current project directory, so
+run it from the root of the project the assistant works in. Existing content in
+those files is kept. Re-running after an upgrade replaces the {{.PrettyName}} section
+instead of adding a duplicate.
