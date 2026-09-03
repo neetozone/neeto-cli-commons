@@ -12,6 +12,9 @@ func TestAddPaginationParams_Both(t *testing.T) {
 	if got := params.Get("page"); got != "3" {
 		t.Errorf("page = %q, want 3", got)
 	}
+	if got := params.Get("page_number"); got != "3" {
+		t.Errorf("page_number = %q, want 3", got)
+	}
 	if got := params.Get("page_size"); got != "25" {
 		t.Errorf("page_size = %q, want 25", got)
 	}
@@ -23,6 +26,9 @@ func TestAddPaginationParams_PageOnly(t *testing.T) {
 
 	if got := params.Get("page"); got != "2" {
 		t.Errorf("page = %q, want 2", got)
+	}
+	if got := params.Get("page_number"); got != "2" {
+		t.Errorf("page_number = %q, want 2", got)
 	}
 	if got := params.Get("page_size"); got != "" {
 		t.Errorf("page_size = %q, want empty", got)

@@ -15,6 +15,7 @@ type Pagination struct {
 func AddPaginationParams(params url.Values, page, pageSize int) {
 	if page > 0 {
 		params.Set("page", fmt.Sprintf("%d", page))
+		params.Set("page_number", fmt.Sprintf("%d", page))
 	}
 	if pageSize > 0 {
 		params.Set("page_size", fmt.Sprintf("%d", pageSize))
