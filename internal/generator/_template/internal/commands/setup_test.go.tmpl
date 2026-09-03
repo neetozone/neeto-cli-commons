@@ -105,7 +105,7 @@ func TestWriteSectionReplacesStaleBlock(t *testing.T) {
 	if !strings.Contains(string(data), "## Testing\n\nRun make test.\n") {
 		t.Fatalf("content after the block was lost:\n%s", data)
 	}
-	if strings.Index(string(data), "## Testing") > strings.Index(string(data), "<!-- {{.BinaryName}}:start -->", "## {{.PrettyName}} CLI", "body text", "<!-- {{.BinaryName}}:start -->") {
+	if strings.Index(string(data), "## Testing") > strings.Index(string(data), "<!-- {{.BinaryName}}:start -->") {
 		t.Fatalf("refreshed block should follow the rest of the file:\n%s", data)
 	}
 }
