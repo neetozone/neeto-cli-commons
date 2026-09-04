@@ -3,6 +3,7 @@ setlocal
 
 set "BASE_URL=https://{{.S3Bucket}}.s3.amazonaws.com/{{.S3PathPrefix}}/latest"
 set "INSTALL_DIR=%LOCALAPPDATA%\Programs\{{.BinaryName}}"
+if defined {{.EnvPrefix}}_INSTALL_DIR set "INSTALL_DIR=%{{.EnvPrefix}}_INSTALL_DIR%"
 
 set "ARCH=amd64"
 if "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
@@ -16,17 +17,61 @@ mkdir "%TMPDIR%"
 curl -fsSL "%BASE_URL%/%ARCHIVE%" -o "%TMPDIR%\%ARCHIVE%"
 if %errorlevel% neq 0 (
     echo Failed to download {{.PrettyName}} CLI.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
+
+echo Verifying checksum...
+curl -fsSL "%BASE_URL%/SHA256SUMS" -o "%TMPDIR%\SHA256SUMS"
+if %errorlevel% neq 0 (
+    echo Failed to download the checksum file.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
+
+set "EXPECTED="
+for /f "usebackq tokens=1,2" %%A in ("%TMPDIR%\SHA256SUMS") do (
+    if /i "%%B"=="%ARCHIVE%" set "EXPECTED=%%A"
+    if /i "%%B"=="*%ARCHIVE%" set "EXPECTED=%%A"
+)
+if not defined EXPECTED (
+    echo No published checksum for %ARCHIVE%. Aborting.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
+
+set "ACTUAL="
+for /f "usebackq delims=" %%H in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-FileHash -LiteralPath '%TMPDIR%\%ARCHIVE%' -Algorithm SHA256).Hash"`) do set "ACTUAL=%%H"
+if not defined ACTUAL (
+    echo Could not compute the checksum of %ARCHIVE%. Aborting.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
+if /i not "%ACTUAL%"=="%EXPECTED%" (
+    echo Checksum mismatch for %ARCHIVE%. Aborting.
+    echo   expected: %EXPECTED%
+    echo   actual:   %ACTUAL%
+    rmdir /s /q "%TMPDIR%"
     exit /b 1
 )
 
 echo Extracting...
-powershell -Command "Expand-Archive -Path '%TMPDIR%\%ARCHIVE%' -DestinationPath '%TMPDIR%' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TMPDIR%\%ARCHIVE%' -DestinationPath '%TMPDIR%' -Force"
+if %errorlevel% neq 0 (
+    echo Failed to extract %ARCHIVE%.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
 
 echo Installing to %INSTALL_DIR%...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 copy /y "%TMPDIR%\{{.BinaryName}}.exe" "%INSTALL_DIR%\{{.BinaryName}}.exe" >nul
+if %errorlevel% neq 0 (
+    echo Failed to install to %INSTALL_DIR%.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
 
-:: Add to user PATH if not already present
 echo %PATH% | findstr /i /c:"%INSTALL_DIR%" >nul
 if %errorlevel% neq 0 (
     for /f "tokens=2*" %%A in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%B"
