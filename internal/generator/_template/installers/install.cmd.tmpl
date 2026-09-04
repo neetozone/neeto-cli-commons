@@ -72,14 +72,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo %PATH% | findstr /i /c:"%INSTALL_DIR%" >nul
-if %errorlevel% equ 0 goto :path_done
-
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $d='%INSTALL_DIR%'; $k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment'); try { $kind = try { $k.GetValueKind('Path') } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }; $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $e=@($p -split ';' | Where-Object { $_ -ne '' }); if ($e -notcontains $d) { $k.SetValue('Path', (($e + $d) -join ';'), $kind) } } finally { $k.Dispose() }"
+set "NEETO_PATH_TARGET=%INSTALL_DIR%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $d=$env:NEETO_PATH_TARGET; $k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment'); $c=$false; try { $kind = try { $k.GetValueKind('Path') } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }; $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $t=$d.TrimEnd('\'); $e=@($p -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') }); if ($e -notcontains $t) { $n = if ($p.Trim() -eq '') { $d } else { $p.TrimEnd(';') + ';' + $d }; $k.SetValue('Path',$n,$kind); $c=$true } } finally { $k.Dispose() }; if ($c) { [Environment]::SetEnvironmentVariable('NeetoPathRefresh','1','User'); [Environment]::SetEnvironmentVariable('NeetoPathRefresh',$null,'User'); Write-Host ('Added ' + $d + ' to user PATH.') }"
 if errorlevel 1 echo Could not update your PATH automatically. Add %INSTALL_DIR% to your PATH manually.
-if not errorlevel 1 echo Added %INSTALL_DIR% to user PATH.
-
-:path_done
 rmdir /s /q "%TMPDIR%"
 
 echo {{.PrettyName}} CLI installed successfully. Restart your terminal and run '{{.BinaryName}} --help' to get started.

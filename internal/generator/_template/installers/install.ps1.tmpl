@@ -47,16 +47,25 @@ try {
   Copy-Item (Join-Path $TmpDir "{{.BinaryName}}.exe") -Destination (Join-Path $InstallDir "{{.BinaryName}}.exe") -Force
 
   $Key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Environment")
+  $PathChanged = $false
   try {
     $Kind = try { $Key.GetValueKind("Path") } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }
     $UserPath = [string]$Key.GetValue("Path", "", [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
-    $Entries = @($UserPath -split ";" | Where-Object { $_ -ne "" })
-    if ($Entries -notcontains $InstallDir) {
-      $Key.SetValue("Path", (($Entries + $InstallDir) -join ";"), $Kind)
-      Write-Host "Added ${InstallDir} to user PATH."
+    $Target = $InstallDir.TrimEnd("\")
+    $Entries = @($UserPath -split ";" | ForEach-Object { $_.Trim().TrimEnd("\") })
+    if ($Entries -notcontains $Target) {
+      $Updated = if ($UserPath.Trim() -eq "") { $InstallDir } else { $UserPath.TrimEnd(";") + ";" + $InstallDir }
+      $Key.SetValue("Path", $Updated, $Kind)
+      $PathChanged = $true
     }
   } finally {
     $Key.Dispose()
+  }
+
+  if ($PathChanged) {
+    [Environment]::SetEnvironmentVariable("NeetoPathRefresh", "1", "User")
+    [Environment]::SetEnvironmentVariable("NeetoPathRefresh", $null, "User")
+    Write-Host "Added ${InstallDir} to user PATH."
   }
 } finally {
   Remove-Item -Recurse -Force $TmpDir -ErrorAction SilentlyContinue
