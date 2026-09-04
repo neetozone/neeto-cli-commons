@@ -41,10 +41,12 @@ if not defined EXPECTED (
 )
 
 set "ACTUAL="
-for /f "skip=1 tokens=*" %%H in ('certutil -hashfile "%TMPDIR%\%ARCHIVE%" SHA256') do (
-    if not defined ACTUAL set "ACTUAL=%%H"
+for /f "usebackq delims=" %%H in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-FileHash -LiteralPath '%TMPDIR%\%ARCHIVE%' -Algorithm SHA256).Hash"`) do set "ACTUAL=%%H"
+if not defined ACTUAL (
+    echo Could not compute the checksum of %ARCHIVE%. Aborting.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
 )
-set "ACTUAL=%ACTUAL: =%"
 if /i not "%ACTUAL%"=="%EXPECTED%" (
     echo Checksum mismatch for %ARCHIVE%. Aborting.
     echo   expected: %EXPECTED%
@@ -54,11 +56,21 @@ if /i not "%ACTUAL%"=="%EXPECTED%" (
 )
 
 echo Extracting...
-powershell -Command "Expand-Archive -Path '%TMPDIR%\%ARCHIVE%' -DestinationPath '%TMPDIR%' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TMPDIR%\%ARCHIVE%' -DestinationPath '%TMPDIR%' -Force"
+if %errorlevel% neq 0 (
+    echo Failed to extract %ARCHIVE%.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
 
 echo Installing to %INSTALL_DIR%...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 copy /y "%TMPDIR%\{{.BinaryName}}.exe" "%INSTALL_DIR%\{{.BinaryName}}.exe" >nul
+if %errorlevel% neq 0 (
+    echo Failed to install to %INSTALL_DIR%.
+    rmdir /s /q "%TMPDIR%"
+    exit /b 1
+)
 
 echo %PATH% | findstr /i /c:"%INSTALL_DIR%" >nul
 if %errorlevel% neq 0 (
