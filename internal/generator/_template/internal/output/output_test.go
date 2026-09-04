@@ -162,3 +162,66 @@ func TestPrintWithPagination_JSONEnvelope(t *testing.T) {
 		t.Error("pagination should be present in envelope")
 	}
 }
+
+func TestPrint_ToonEndsWithNewline(t *testing.T) {
+	ToonMode = true
+	defer func() { ToonMode = false }()
+
+	out := captureStdout(t, func() {
+		Print(json.RawMessage(`{"meeting":{"id":"m1","name":"Demo"}}`), nil)
+	})
+
+	want := "data:\n  meeting:\n    id: m1\n    name: Demo\n"
+	if out != want {
+		t.Errorf("Print toon = %q, want %q", out, want)
+	}
+}
+
+func TestPrintWithPagination_ToonEmptyListKeepsPaginationOnItsOwnLine(t *testing.T) {
+	ToonMode = true
+	defer func() { ToonMode = false }()
+
+	out := captureStdout(t, func() {
+		PrintWithPagination(
+			json.RawMessage(`[]`),
+			json.RawMessage(`{"current_page_number":1,"total_pages":1,"total_records":0}`),
+			nil,
+		)
+	})
+
+	want := "data[0]:\npagination:\n  current_page_number: 1\n  total_pages: 1\n  total_records: 0\n"
+	if out != want {
+		t.Errorf("PrintWithPagination toon = %q, want %q", out, want)
+	}
+}
+
+func TestPrintWithPagination_ToonRowsDoNotRunIntoPagination(t *testing.T) {
+	ToonMode = true
+	defer func() { ToonMode = false }()
+
+	out := captureStdout(t, func() {
+		PrintWithPagination(
+			json.RawMessage(`[{"id":"m1","name":"Demo"},{"id":"m2","name":"Intro"}]`),
+			json.RawMessage(`{"current_page_number":1,"total_pages":1,"total_records":2}`),
+			nil,
+		)
+	})
+
+	want := "data[2]{id,name}:\n  m1,Demo\n  m2,Intro\npagination:\n  current_page_number: 1\n  total_pages: 1\n  total_records: 2\n"
+	if out != want {
+		t.Errorf("PrintWithPagination toon = %q, want %q", out, want)
+	}
+}
+
+func TestPrint_ToonFallsBackToRawBodyWhenNotJSON(t *testing.T) {
+	ToonMode = true
+	defer func() { ToonMode = false }()
+
+	out := captureStdout(t, func() {
+		Print(json.RawMessage(`<html>oops</html>`), nil)
+	})
+
+	if out != "<html>oops</html>\n" {
+		t.Errorf("Print toon fallback = %q, want the raw body on its own line", out)
+	}
+}
