@@ -41,7 +41,7 @@ if not defined EXPECTED (
 )
 
 set "ACTUAL="
-for /f "usebackq delims=" %%H in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-FileHash -LiteralPath '%TMPDIR%\%ARCHIVE%' -Algorithm SHA256).Hash"`) do set "ACTUAL=%%H"
+for /f "usebackq delims=" %%H in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-FileHash -LiteralPath (Join-Path $env:TMPDIR $env:ARCHIVE) -Algorithm SHA256).Hash"`) do set "ACTUAL=%%H"
 if not defined ACTUAL (
     echo Could not compute the checksum of %ARCHIVE%. Aborting.
     rmdir /s /q "%TMPDIR%"
@@ -56,7 +56,7 @@ if /i not "%ACTUAL%"=="%EXPECTED%" (
 )
 
 echo Extracting...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TMPDIR%\%ARCHIVE%' -DestinationPath '%TMPDIR%' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath (Join-Path $env:TMPDIR $env:ARCHIVE) -DestinationPath $env:TMPDIR -Force"
 if %errorlevel% neq 0 (
     echo Failed to extract %ARCHIVE%.
     rmdir /s /q "%TMPDIR%"
@@ -72,8 +72,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-set "NEETO_PATH_TARGET=%INSTALL_DIR%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $d=$env:NEETO_PATH_TARGET; $k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment'); $c=$false; try { $kind = try { $k.GetValueKind('Path') } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }; $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $t=$d.TrimEnd('\'); $e=@($p -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') }); if ($e -notcontains $t) { $n = if ($p.Trim() -eq '') { $d } else { $p.TrimEnd(';') + ';' + $d }; $k.SetValue('Path',$n,$kind); $c=$true } } finally { $k.Dispose() }; if ($c) { [Environment]::SetEnvironmentVariable('NeetoPathRefresh','1','User'); [Environment]::SetEnvironmentVariable('NeetoPathRefresh',$null,'User'); Write-Host ('Added ' + $d + ' to user PATH.') }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $d=$env:INSTALL_DIR; $k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment'); $c=$false; try { $kind = try { $k.GetValueKind('Path') } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }; $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $t=$d.TrimEnd('\'); $e=@($p -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') }); if ($e -notcontains $t) { $n = if ($p.Trim() -eq '') { $d } else { $p.TrimEnd(';') + ';' + $d }; $k.SetValue('Path',$n,$kind); $c=$true } } finally { $k.Dispose() }; if ($c) { [Environment]::SetEnvironmentVariable('NeetoPathRefresh','1','User'); [Environment]::SetEnvironmentVariable('NeetoPathRefresh',$null,'User'); Write-Host ('Added ' + $d + ' to user PATH.') }"
 if errorlevel 1 echo Could not update your PATH automatically. Add %INSTALL_DIR% to your PATH manually.
 rmdir /s /q "%TMPDIR%"
 
