@@ -136,6 +136,10 @@ func (v *Variables) ApplyDerivations() {
 	}
 }
 
+func (v *Variables) EnvPrefix() string {
+	return strings.ToUpper(strings.ReplaceAll(v.BinaryName, "-", "_"))
+}
+
 // Validate checks that every required field is present and well-formed.
 // Returns the first error encountered; callers should address errors
 // iteratively.

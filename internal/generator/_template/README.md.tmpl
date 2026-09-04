@@ -18,6 +18,10 @@ brew install {{.HomebrewTap}}/{{.BinaryName}}
 curl -fsSL https://{{.Domain}}/cli/install.sh | sh
 ```
 
+This verifies the download's SHA-256 checksum against the published `SHA256SUMS`,
+then installs to `/usr/local/bin` (may prompt for sudo). Set `{{.EnvPrefix}}_INSTALL_DIR`
+to a directory you own to install without sudo.
+
 ### Windows
 
 **PowerShell:**
@@ -31,6 +35,10 @@ irm https://{{.Domain}}/cli/install.ps1 | iex
 ```cmd
 curl -fsSL https://{{.Domain}}/cli/install.cmd -o install.cmd && install.cmd
 ```
+
+Both verify the download's SHA-256 checksum before installing to
+`%LOCALAPPDATA%\Programs\{{.BinaryName}}` and adding it to your user PATH. Set
+`{{.EnvPrefix}}_INSTALL_DIR` to install somewhere else.
 
 ### Verify installation
 

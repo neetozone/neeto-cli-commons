@@ -93,6 +93,21 @@ func TestApplyDerivations_RespectsUserOverrides(t *testing.T) {
 	}
 }
 
+func TestEnvPrefix(t *testing.T) {
+	cases := map[string]string{
+		"neetocal":  "NEETOCAL",
+		"neetoform": "NEETOFORM",
+		"acme-tool": "ACME_TOOL",
+		"":          "",
+	}
+	for binary, want := range cases {
+		v := Variables{BinaryName: binary}
+		if got := v.EnvPrefix(); got != want {
+			t.Errorf("EnvPrefix() for BinaryName %q = %q, want %q", binary, got, want)
+		}
+	}
+}
+
 func TestValidate_Valid(t *testing.T) {
 	v := Defaults("NeetoForm")
 	if err := v.Validate(); err != nil {
