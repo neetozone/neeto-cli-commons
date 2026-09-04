@@ -16,7 +16,7 @@ import (
 
 const (
 	pollInterval = 2 * time.Second
-	pollTimeout  = 120 * time.Second
+	pollTimeout  = 5 * time.Minute
 )
 
 func BaseURL(subdomain string) string {
