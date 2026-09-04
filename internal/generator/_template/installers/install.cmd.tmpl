@@ -73,12 +73,13 @@ if %errorlevel% neq 0 (
 )
 
 echo %PATH% | findstr /i /c:"%INSTALL_DIR%" >nul
-if %errorlevel% neq 0 (
-    for /f "tokens=2*" %%A in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USER_PATH=%%B"
-    setx PATH "%USER_PATH%;%INSTALL_DIR%" >nul
-    echo Added %INSTALL_DIR% to user PATH.
-)
+if %errorlevel% equ 0 goto :path_done
 
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; $d='%INSTALL_DIR%'; $k=[Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment'); try { $kind = try { $k.GetValueKind('Path') } catch { [Microsoft.Win32.RegistryValueKind]::ExpandString }; $p=[string]$k.GetValue('Path','',[Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames); $e=@($p -split ';' | Where-Object { $_ -ne '' }); if ($e -notcontains $d) { $k.SetValue('Path', (($e + $d) -join ';'), $kind) } } finally { $k.Dispose() }"
+if errorlevel 1 echo Could not update your PATH automatically. Add %INSTALL_DIR% to your PATH manually.
+if not errorlevel 1 echo Added %INSTALL_DIR% to user PATH.
+
+:path_done
 rmdir /s /q "%TMPDIR%"
 
 echo {{.PrettyName}} CLI installed successfully. Restart your terminal and run '{{.BinaryName}} --help' to get started.
