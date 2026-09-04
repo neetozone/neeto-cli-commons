@@ -57,7 +57,7 @@ func UseJSON() bool {
 
 func Print(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	if ToonMode {
-		printToon(data)
+		printToon(data, nil)
 		return
 	}
 
@@ -77,8 +77,7 @@ func Print(data json.RawMessage, breadcrumbs []Breadcrumb) {
 
 func PrintWithPagination(data json.RawMessage, pagination json.RawMessage, breadcrumbs []Breadcrumb) {
 	if ToonMode {
-		printToon(data)
-		printToonPagination(pagination)
+		printToon(data, pagination)
 		return
 	}
 
@@ -515,38 +514,33 @@ func extractKeys(data json.RawMessage) []string {
 	return keys
 }
 
-func printToon(data json.RawMessage) {
-	var v interface{}
-	if err := json.Unmarshal(data, &v); err != nil {
-		fmt.Println(string(data))
-		return
-	}
-
-	out, err := gotoon.Encode(v)
+func printToon(data json.RawMessage, pagination json.RawMessage) {
+	out, err := encodeToon(data, pagination)
 	if err != nil {
 		fmt.Println(string(data))
 		return
 	}
 
-	fmt.Print(out)
+	fmt.Println(out)
 }
 
-func printToonPagination(pagination json.RawMessage) {
-	if pagination == nil {
-		return
+func encodeToon(data json.RawMessage, pagination json.RawMessage) (string, error) {
+	var decodedData interface{}
+	if err := json.Unmarshal(data, &decodedData); err != nil {
+		return "", err
 	}
 
-	var v interface{}
-	if err := json.Unmarshal(pagination, &v); err != nil {
-		return
+	envelope := map[string]interface{}{"data": decodedData}
+
+	if pagination != nil {
+		var decodedPagination interface{}
+		if err := json.Unmarshal(pagination, &decodedPagination); err != nil {
+			return "", err
+		}
+		envelope["pagination"] = decodedPagination
 	}
 
-	out, err := gotoon.Encode(v)
-	if err != nil {
-		return
-	}
-
-	fmt.Print(out)
+	return gotoon.Encode(envelope)
 }
 
 func isScalar(v interface{}) bool {
