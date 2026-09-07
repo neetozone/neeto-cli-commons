@@ -31,6 +31,7 @@ type target struct {
 var repoFiles = []target{
 	{"goreleaser.yml", ".goreleaser.yml"},
 	{"gitignore", ".gitignore"},
+	{"golangci.yml", ".golangci.yml"},
 	{"makefile", "Makefile"},
 	{"mise.toml", "mise.toml"},
 	{"bin-setup", "bin/setup"},

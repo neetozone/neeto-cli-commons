@@ -41,7 +41,7 @@ func TestAllProducesEveryRepoFile(t *testing.T) {
 	}
 	want := []string{
 		".claude-plugin/marketplace.json", ".claude-plugin/plugin.json",
-		".githooks/pre-commit", ".gitignore", ".goreleaser.yml",
+		".githooks/pre-commit", ".gitignore", ".golangci.yml", ".goreleaser.yml",
 		".neetoci/release.yml", ".neetoci/verify.yml",
 		"Makefile", "bin/setup", "commands/doctor.md",
 		"docs/adding-commands.md",

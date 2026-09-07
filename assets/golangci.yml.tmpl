@@ -1,0 +1,13 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      - path: internal/
+        text: "error strings should not be capitalized"
+        linters:
+          - staticcheck
+      - path: internal/
+        text: "error strings should not end with punctuation"
+        linters:
+          - staticcheck
