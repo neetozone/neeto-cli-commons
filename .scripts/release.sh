@@ -7,7 +7,7 @@ if echo "$LAST_COMMIT_MSG" | grep -q "^Bump version to "; then
   exit 0
 fi
 
-for tool in git go gh; do
+for tool in git go gh goreleaser; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Required tool not found on PATH: $tool" >&2
     exit 1
@@ -69,5 +69,16 @@ else
   echo "Pushed tag v${VERSION}"
 fi
 
+RELEASE_STATUS=0
+
+echo "Publishing the neeto-cli-gen binaries for v${VERSION}..."
+export GORELEASER_CURRENT_TAG="v${VERSION}"
+if ! goreleaser release --clean; then
+  echo "goreleaser failed. The tag and the version bump are already pushed, so the product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
+  RELEASE_STATUS=1
+fi
+
 echo "Opening the version-bump pull requests on every product CLI..."
 bash .scripts/bump.sh "v${VERSION}"
+
+exit "$RELEASE_STATUS"

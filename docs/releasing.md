@@ -11,7 +11,8 @@ script:
 2. Bumps `VERSION` accordingly, commits it as `Bump version to X.Y.Z` and pushes
    to `main`. That commit is skipped on the next run, so the pipeline cannot loop.
 3. Tags the commit `vX.Y.Z` and pushes the tag.
-4. Runs `.scripts/bump.sh vX.Y.Z`.
+4. Publishes the `neeto-cli-gen` binaries for that tag.
+5. Runs `.scripts/bump.sh vX.Y.Z`.
 
 ## The fan-out
 
@@ -41,6 +42,16 @@ released CLIs, each with its own patch bump.
 
 Reviewing and merging those eleven pull requests is the only manual step.
 
+## First time through
+
+The fan-out needs every product already ported to this module. Until that has
+happened, merge into `main` here **without** a version label: an unlabelled
+merge releases nothing. Once this module and all eleven product pull requests
+are on `main`, the next labelled merge cuts the first real release and rolls it
+out. A repo that is not ported yet fails the run rather than being skipped
+quietly, so a premature labelled merge produces eleven noisy failures after the
+tag has already been pushed.
+
 ## Running the fan-out by hand
 
 ```bash
@@ -51,6 +62,12 @@ Needs `GITHUB_TOKEN` in the environment, and `git`, `go` and `gh` on PATH.
 
 ## The generator binary
 
-`.goreleaser.yml` builds `neeto-cli-gen` from the nested `gen` module. Nothing
-runs it yet — the generator is used through `go run` or `go install`. Wire it
-into `.scripts/release.sh` if the binary should be published.
+The release also publishes `neeto-cli-gen`, built from the nested `gen` module,
+as a GitHub release on the `vX.Y.Z` tag with linux and darwin builds for amd64
+and arm64 plus a checksums file. `go install` keeps working as before; the
+binaries are for anyone who would rather not build it.
+
+If goreleaser fails, the run says so and carries on to the product roll-out,
+then exits non-zero. The tag and the version bump are already pushed at that
+point, so re-run `goreleaser release --clean` against the tag rather than
+re-running the whole pipeline.
