@@ -154,6 +154,12 @@ func TestCatalog_RequiredSurvivesAJSONFileOverride(t *testing.T) {
 	a, _ := newTestApp(t, subdomainProduct())
 	addWidgetsCommand(t, a)
 
+	createCmd, _, err := a.Root().Find([]string{"widgets", "create"})
+	if err != nil {
+		t.Fatalf("widgets create: %v", err)
+	}
+	AllowJSONFileToSatisfyRequiredFlags(createCmd)
+
 	entries := catalogFor(t, a)
 	widgets := entryFor(t, entries, "neetodesk widgets")
 	create := widgets["subcommands"].([]any)[0].(map[string]any)
