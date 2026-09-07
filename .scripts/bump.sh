@@ -107,6 +107,7 @@ for repo in $PRODUCTS; do
       --head "$BRANCH" \
       --title "Bumped neeto-cli-commons to ${COMMONS_VERSION}" \
       --label patch \
+      --label mergepr \
       --body "Picks up neeto-cli-commons ${COMMONS_VERSION}. The generated files were re-synced and the build, vet, gofmt and test suites all pass. Merging this with the patch label cuts the next release of this CLI."
   )
   status=$?
