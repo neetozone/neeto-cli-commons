@@ -3,7 +3,7 @@
 ## Install
 
 ```bash
-go install github.com/neetozone/neeto-cli-template/cmd/neeto-cli-gen@latest
+go install github.com/neetozone/neeto-cli-commons/gen/cmd/neeto-cli-gen@latest
 ```
 
 Or from a local checkout:

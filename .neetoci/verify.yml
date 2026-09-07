@@ -11,6 +11,8 @@ paths:
   - "**/go.mod"
   - "**/go.sum"
   - assets/**
+  - products.txt
+  - .scripts/**
   - .neetoci/**
 
 machine_type: multi
@@ -27,6 +29,7 @@ commands:
   - (cd gen && go mod download && gofmt -l . | tee /tmp/gen_fmt_output && test ! -s /tmp/gen_fmt_output)
   - (cd gen && go vet ./...)
   - (cd gen && go test ./...)
+  - bash -n .scripts/release.sh && bash -n .scripts/bump.sh
 
 triggers:
   - event: branch

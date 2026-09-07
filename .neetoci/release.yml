@@ -1,6 +1,6 @@
 version: v1.0
 
-fail_fast: false
+fail_fast: true
 
 plan: pro
 
@@ -11,10 +11,8 @@ commands:
   - neetoci-version go 1.26
   - export GOPRIVATE=github.com/neetozone/*
   - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-  - git config --global user.email "neeto-bot@bigbinary.com"
-  - git config --global user.name "NeetoBot"
-  - bash assets/bump.sh "$(cat VERSION | sed 's/^v*/v/')"
+  - bash .scripts/release.sh
 
 triggers:
-  - event: tag
-    tag_name: "v*"
+  - event: branch
+    branch_name: main

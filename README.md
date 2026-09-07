@@ -1,10 +1,10 @@
-# neeto-cli-template
+# neeto-cli-commons
 
-Template repository and generator for building product CLIs that follow the
-`neeto-cal-cli` architecture: Cobra-based command tree, browser login with
-multi-subdomain support, HTTP client, `--json`/`--quiet`/`--toon` output,
-Claude plugin scaffolding, `.neetoci` release pipeline, and cross-platform
-installers.
+Shared module and generator for the neeto product CLIs. Every product imports
+this module for its command tree, browser login with multi-subdomain support,
+HTTP client, `--json`/`--quiet`/`--toon` output and Claude plugin scaffolding,
+and every non-Go file it ships — installers, release pipeline, build config —
+is rendered from here by `neeto-cli-sync`.
 
 Running the generator produces a **brand new repository** ready to be filled
 in with product-specific commands. The generator never modifies an existing
@@ -13,7 +13,7 @@ directory.
 ## Install
 
 ```bash
-go install github.com/neetozone/neeto-cli-template/cmd/neeto-cli-gen@latest
+go install github.com/neetozone/neeto-cli-commons/gen/cmd/neeto-cli-gen@latest
 ```
 
 ## Generate a new CLI
