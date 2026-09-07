@@ -47,8 +47,6 @@ for repo in $PRODUCTS; do
     set -euo pipefail
     cd "$target"
 
-    git config user.name "NeetoBot"
-    git config user.email "bot@neeto.com"
     git config core.hooksPath /dev/null
     git checkout -q -b "$BRANCH"
 

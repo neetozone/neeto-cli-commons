@@ -48,8 +48,6 @@ esac
 VERSION="${MAJOR}.${MINOR}.${PATCH}"
 echo "Releasing v${VERSION} (bumped from ${CURRENT_VERSION} via the ${VERSION_LABEL} label)"
 
-git config user.name "NeetoBot"
-git config user.email "bot@neeto.com"
 git config core.hooksPath /dev/null
 
 git fetch origin main
