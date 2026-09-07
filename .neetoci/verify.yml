@@ -28,6 +28,7 @@ commands:
   - gofmt -l . | tee /tmp/fmt_output && test ! -s /tmp/fmt_output
   - go vet ./...
   - go test ./...
+  - command -v golangci-lint >/dev/null 2>&1 || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   - golangci-lint run
   - (cd gen && go mod download && gofmt -l . | tee /tmp/gen_fmt_output && test ! -s /tmp/gen_fmt_output)
   - (cd gen && go vet ./...)
