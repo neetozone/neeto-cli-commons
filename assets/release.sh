@@ -101,7 +101,7 @@ git config user.name "NeetoBot"
 git config user.email "bot@neeto.com"
 git config core.hooksPath /dev/null
 
-if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+if git ls-remote --exit-code --tags origin "refs/tags/v${VERSION}" >/dev/null 2>&1; then
   echo "Tag v${VERSION} already exists. Skipping tag creation."
 else
   git tag -a "v${VERSION}" -m "Release v${VERSION}"
