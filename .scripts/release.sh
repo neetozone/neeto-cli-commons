@@ -93,11 +93,19 @@ RELEASE_STATUS=0
 echo "Publishing the neeto-cli-gen binaries for v${VERSION}..."
 export GORELEASER_CURRENT_TAG="v${VERSION}"
 if ! goreleaser release --clean; then
-  echo "goreleaser failed. The tag and the version bump are already pushed, so the product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
+  echo "goreleaser failed. The tag and the version bump are already pushed, so any product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
   RELEASE_STATUS=1
 fi
 
-echo "Opening the version-bump pull requests on every product CLI..."
-bash .scripts/bump.sh "v${VERSION}"
+if [ "$VERSION_LABEL" = "major" ]; then
+  echo "Skipping the product roll-out because this is a major release."
+  echo "Go requires a /vN suffix on the module path from v2 onwards, so the products cannot"
+  echo "resolve v${VERSION} until github.com/neetozone/neeto-cli-commons becomes"
+  echo "github.com/neetozone/neeto-cli-commons/v${MAJOR} and every import in every product is"
+  echo "updated to match. Do that first, then run .scripts/bump.sh v${VERSION} by hand."
+else
+  echo "Opening the version-bump pull requests on every product CLI..."
+  bash .scripts/bump.sh "v${VERSION}"
+fi
 
 exit "$RELEASE_STATUS"
