@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/neetozone/neeto-cli-commons/config"
 )
 
 const productYAML = `pretty_name: NeetoCal
@@ -150,5 +153,25 @@ func TestEnvPrintsShellAssignments(t *testing.T) {
 func TestMissingConfigIsAnError(t *testing.T) {
 	if err := run([]string{"--config", filepath.Join(t.TempDir(), "nope.yml")}, io.Discard); err == nil {
 		t.Error("run accepted a missing config")
+	}
+}
+
+func TestWarnMutableCommonsVersion(t *testing.T) {
+	cases := map[string]bool{
+		"main":         true,
+		"my-branch":    true,
+		"v1.4.0":       false,
+		"1.4.0":        false,
+		"a30108eaded6": false,
+		"a30108eaded6a23e011715c75081f855ce6d5dc7": false,
+		"": false,
+	}
+
+	for ref, wantWarning := range cases {
+		var buf bytes.Buffer
+		warnMutableCommonsVersion(config.Product{CommonsVersion: ref}, &buf)
+		if got := buf.Len() > 0; got != wantWarning {
+			t.Errorf("commons_version %q warned=%v, want %v", ref, got, wantWarning)
+		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -41,6 +42,8 @@ func run(args []string, stdout io.Writer) error {
 		_, _ = fmt.Fprint(stdout, render.ShellEnv(*product))
 		return nil
 	}
+
+	warnMutableCommonsVersion(*product, os.Stderr)
 
 	files, err := render.All(*product)
 	if err != nil {
@@ -153,6 +156,15 @@ func checkTree(product config.Product, dir string, files map[string][]byte, merg
 	}
 	return fmt.Errorf("neeto-cli-sync --check failed; run neeto-cli-sync to update:\n  %s",
 		strings.Join(stale, "\n  "))
+}
+
+var immutableRef = regexp.MustCompile(`^(v?\d+\.\d+|[0-9a-f]{7,40}$)`)
+
+func warnMutableCommonsVersion(product config.Product, w io.Writer) {
+	if product.CommonsVersion == "" || immutableRef.MatchString(product.CommonsVersion) {
+		return
+	}
+	fmt.Fprintf(w, "warning: commons_version is %q, which moves. The release pipeline fetches the release script from that ref but checks it against a digest frozen at sync time, so an unrelated change to neeto-cli-commons will block this repo's next release. Point it at a tag once one exists.\n", product.CommonsVersion)
 }
 
 func modeFor(name string) fs.FileMode {
