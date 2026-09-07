@@ -44,6 +44,8 @@ func TestAllProducesEveryRepoFile(t *testing.T) {
 		".githooks/pre-commit", ".gitignore", ".goreleaser.yml",
 		".neetoci/release.yml", ".neetoci/verify.yml",
 		"Makefile", "bin/setup", "commands/doctor.md",
+		"docs/adding-commands.md",
+		"docs/api-wrapper-reference.md",
 		"hooks/hooks.json", "hooks/session-start.sh",
 		"installers/install.cmd", "installers/install.ps1", "installers/install.sh",
 		"mise.toml",

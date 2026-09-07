@@ -41,6 +41,8 @@ var repoFiles = []target{
 	{"installers/install.ps1", "installers/install.ps1"},
 	{"installers/install.cmd", "installers/install.cmd"},
 	{"commands/doctor.md", "commands/doctor.md"},
+	{"docs/adding-commands.md", "docs/adding-commands.md"},
+	{"docs/api-wrapper-reference.md", "docs/api-wrapper-reference.md"},
 }
 
 // All renders every file this package owns in a product repository, keyed by

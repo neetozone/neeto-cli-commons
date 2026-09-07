@@ -1,0 +1,93 @@
+# Adding a command
+
+Everything generic — authentication, the HTTP client, table and JSON rendering, `doctor`,
+`completion`, `setup`, `update`, `version` and `commands` — comes from
+`github.com/neetozone/neeto-cli-commons`. This repo holds only {{.PrettyName}}'s own commands.
+
+This file is generated. Edit it in neeto-cli-commons, not here.
+
+## Where things live
+
+| Path | Contents |
+|---|---|
+| `.neeto-cli.yml` | This product's identity: names, API base path, table column priority. |
+| `product.go` | Embeds `.neeto-cli.yml` and the skill so the binary carries both. |
+| `cmd/{{.BinaryName}}/main.go` | Builds the app and hands it this repo's commands. |
+| `internal/commands/register.go` | Thin wrappers over the shared app. |
+| `internal/commands/*.go` | One file per resource. This is where you work. |
+| `skills/{{.BinaryName}}/SKILL.md` | What an AI assistant is told this CLI can do. |
+
+Every other file in the repo is written by `neeto-cli-sync` and asserted in CI. Editing one by
+hand fails the build.
+
+## Write the command
+
+Copy the nearest existing resource file and change the parts that differ. A file registers itself,
+so nothing else needs editing:
+
+```go
+var widgetsCmd = &cobra.Command{
+	Use:   "widgets",
+	Short: "Manage widgets",
+}
+
+var widgetsListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List widgets",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		data, err := c.Get("/widgets", paginationParams(cmd))
+		if err != nil {
+			return err
+		}
+
+		printList(data, "widgets", nil)
+		return nil
+	},
+}
+
+func init() {
+	register(func(root *cobra.Command) { root.AddCommand(widgetsCmd) })
+
+	widgetsCmd.AddCommand(widgetsListCmd)
+	addPaginationFlags(widgetsListCmd)
+}
+```
+
+`register` collects the closure; `Register` replays them all onto the shared root command once
+`main` has built the app.
+
+## House conventions
+
+These are what keep the eleven neeto CLIs looking like one product. Follow them.
+
+- A list command is `list`, a single record is `show`, never `get`.
+- `Short` reads `List widgets`, not `List all widgets`, and is written for a customer — it becomes
+  the description published on the docs site.
+- A confirmation reads `Widget deleted.`, never `Widget deleted successfully.`
+- Never call `fmt.Print` in a command. Use `printList`, `printResource`, `printActionResult` or
+  `printMessage`, or `--json`, `--quiet` and `--toon` will not work.
+- Mark a required flag with `markFlagsRequired`. Do not write `(required)` into the flag's
+  description — it is added when help is rendered and left out of the machine-readable catalog.
+- A flag that reads a payload from a file is `--json-file`.
+- `register.go` should carry only the wrappers this repo actually calls.
+
+## Before you push
+
+```bash
+make build
+./{{.BinaryName}} widgets list
+./{{.BinaryName}} widgets list --json
+./{{.BinaryName}} widgets list --quiet
+gofmt -l . && go vet ./... && go test ./...
+```
+
+`{{.BinaryName}} commands` prints the full command surface as JSON. The docs site is generated
+from it, so check your new command appears there and reads well.
+
+Update `skills/{{.BinaryName}}/SKILL.md` in the same change. An assistant reads that file to
+decide what {{.PrettyName}} can do, and a stale one makes it answer wrongly.
