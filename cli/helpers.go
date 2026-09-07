@@ -59,26 +59,20 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 }
 
 // inlinePagination rebuilds a pagination block from a body that carries the
-// counters at the top level instead of nested, which is how NeetoDeploy's API
-// answers. Without this those responses lose their page line entirely.
+// counters at the top level instead of nested, which is how NeetoDeploy and
+// NeetoInvoice answer. The rebuilt block uses the canonical key names, so the
+// JSON envelope reads the same whichever shape the API sent.
 func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
-	keys := []string{"total_count", "total_records", "total_pages", "current_page_number", "current_page", "page_size", "per_page"}
-
-	block := make(map[string]json.RawMessage, len(keys)+1)
-	for _, key := range keys {
-		if v, ok := parsed[key]; ok {
-			block[key] = v
-		}
-	}
-	if block["total_pages"] == nil {
+	totalPages := intFrom(parsed, "total_pages")
+	if totalPages == 0 {
 		return nil
 	}
-	// NeetoInvoice names the current page "page". Only trust that reading when
-	// the body already looks like a paginated envelope.
-	if block["current_page"] == nil && block["current_page_number"] == nil {
-		if v, ok := parsed["page"]; ok {
-			block["current_page"] = v
-		}
+
+	block := client.Pagination{
+		TotalRecords:      intFrom(parsed, "total_records", "total_count"),
+		TotalPages:        totalPages,
+		CurrentPageNumber: intFrom(parsed, "current_page_number", "current_page", "page"),
+		PageSize:          intFrom(parsed, "page_size", "per_page"),
 	}
 
 	out, err := json.Marshal(block)
@@ -86,6 +80,20 @@ func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
 		return nil
 	}
 	return out
+}
+
+func intFrom(parsed map[string]json.RawMessage, keys ...string) int {
+	for _, key := range keys {
+		raw, ok := parsed[key]
+		if !ok {
+			continue
+		}
+		var n int
+		if json.Unmarshal(raw, &n) == nil && n != 0 {
+			return n
+		}
+	}
+	return 0
 }
 
 func (a *App) PrintResource(data json.RawMessage, breadcrumbs []output.Breadcrumb) {

@@ -39,9 +39,9 @@ func TestPrintListRebuildsTopLevelPagination(t *testing.T) {
 	a.PrintList(json.RawMessage(`{"apps":[{"id":1}],"total_pages":3,"current_page":2,"total_count":25}`), "apps", nil)
 
 	out := buf.String()
-	for _, want := range []string{`"total_pages": 3`, `"current_page": 2`, `"total_count": 25`} {
+	for _, want := range []string{`"total_pages": 3`, `"current_page_number": 2`, `"total_records": 25`} {
 		if !strings.Contains(out, want) {
-			t.Errorf("top-level pagination not rebuilt, missing %s in: %s", want, out)
+			t.Errorf("top-level pagination not rebuilt into canonical keys, missing %s in: %s", want, out)
 		}
 	}
 }
@@ -104,7 +104,7 @@ func TestPrintListReadsNeetoInvoicePaginationKeys(t *testing.T) {
 	a.PrintList(json.RawMessage(`{"time_entries":[{"id":1}],"total_count":42,"total_pages":5,"page":2,"page_size":10}`), "time_entries", nil)
 
 	out := buf.String()
-	for _, want := range []string{`"current_page"`, `"total_count": 42`, `"total_pages": 5`} {
+	for _, want := range []string{`"current_page_number": 2`, `"total_records": 42`, `"total_pages": 5`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %s in: %s", want, out)
 		}
