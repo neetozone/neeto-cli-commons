@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/neetozone/neeto-cli-commons/client"
 	"github.com/neetozone/neeto-cli-commons/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+)
+
+const (
+	defaultMaxPageSize    = 100
+	maxPageSizeAnnotation = "neeto_max_page_size"
 )
 
 // Client resolves credentials for the command's --subdomain (when the product
@@ -89,6 +95,9 @@ func (a *App) PaginationParams(cmd *cobra.Command) url.Values {
 	params := url.Values{}
 	page, _ := cmd.Flags().GetInt("page")
 	pageSize, _ := cmd.Flags().GetInt("page-size")
+	if max := maxPageSize(cmd); pageSize > max {
+		pageSize = max
+	}
 	client.AddPaginationParams(params, page, pageSize)
 	return params
 }
@@ -98,12 +107,28 @@ func (a *App) PaginationParams(cmd *cobra.Command) url.Values {
 // lower and the help text must say so.
 func AddPaginationFlags(maxPageSize int, cmds ...*cobra.Command) {
 	if maxPageSize <= 0 {
-		maxPageSize = 100
+		maxPageSize = defaultMaxPageSize
 	}
 	for _, cmd := range cmds {
 		cmd.Flags().Int("page", 0, "Page number")
 		cmd.Flags().Int("page-size", 0, fmt.Sprintf("Items per page (max %d)", maxPageSize))
+		if cmd.Annotations == nil {
+			cmd.Annotations = map[string]string{}
+		}
+		cmd.Annotations[maxPageSizeAnnotation] = strconv.Itoa(maxPageSize)
 	}
+}
+
+// maxPageSize reports the cap AddPaginationFlags advertised for this command.
+func maxPageSize(cmd *cobra.Command) int {
+	if cmd == nil {
+		return defaultMaxPageSize
+	}
+	n, err := strconv.Atoi(cmd.Annotations[maxPageSizeAnnotation])
+	if err != nil || n <= 0 {
+		return defaultMaxPageSize
+	}
+	return n
 }
 
 // MarkFlagsRequired marks flags required. The "(required)" hint is added at help
