@@ -38,6 +38,9 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 
 	items, hasItems := parsed[resourceKey]
 	pagination := parsed["pagination"]
+	if pagination == nil {
+		pagination = inlinePagination(parsed)
+	}
 
 	switch {
 	case hasItems && pagination != nil:
@@ -47,6 +50,29 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 	default:
 		a.Printer.Print(data, breadcrumbs)
 	}
+}
+
+// inlinePagination rebuilds a pagination block from a body that carries the
+// counters at the top level instead of nested, which is how NeetoDeploy's API
+// answers. Without this those responses lose their page line entirely.
+func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
+	keys := []string{"total_count", "total_pages", "current_page_number", "current_page", "page_size", "per_page"}
+
+	block := make(map[string]json.RawMessage, len(keys))
+	for _, key := range keys {
+		if v, ok := parsed[key]; ok {
+			block[key] = v
+		}
+	}
+	if block["total_pages"] == nil {
+		return nil
+	}
+
+	out, err := json.Marshal(block)
+	if err != nil {
+		return nil
+	}
+	return out
 }
 
 func (a *App) PrintResource(data json.RawMessage, breadcrumbs []output.Breadcrumb) {

@@ -106,10 +106,10 @@ Use this whenever a user asks about a flag or command not covered below.
 
 ## Environment variable override
 
-Set `{{.EnvVar}}` to point the CLI at a staging or local server:
+Set `{{.EnvPrefix}}_BASE_URL` to point the CLI at a staging or local server:
 
 ```bash
-export {{.EnvVar}}=http://acme.lvh.me:8980
+export {{.EnvPrefix}}_BASE_URL=http://acme.lvh.me:8980
 {{.BinaryName}} login --subdomain acme
 ```
 
@@ -128,6 +128,10 @@ stderr. Common errors the agent should expect:
 
 ## Product-specific commands
 
-This skeleton CLI does not yet ship product-specific resource commands.
-Run `{{.BinaryName}} commands` to see what is currently available, and
-refer to the CLI's own docs for the full command reference once it grows.
+`{{.BinaryName}} examples list` and `{{.BinaryName}} examples show <id>` are
+placeholders shipped with a new CLI. Replace this section with the real
+resources as they are added, and keep it accurate — an assistant reads this file
+to decide what {{.PrettyName}} can do, and a stale list makes it answer wrongly.
+
+`{{.BinaryName}} commands` always prints the true command surface as JSON, so use
+it to check this section against the binary.

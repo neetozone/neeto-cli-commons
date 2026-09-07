@@ -8,16 +8,15 @@ import (
 )
 
 func TestRenderPath(t *testing.T) {
-	v := &vars.Variables{BinaryName: "testapp"}
+	v := varsFor("testapp")
 
 	cases := map[string]string{
-		"cmd/__BINARY__/main.go.tmpl":     filepath.Join("cmd", "testapp", "main.go"),
-		"internal/auth/auth.go.tmpl":      filepath.Join("internal", "auth", "auth.go"),
-		"internal/client/pagination.go":   filepath.Join("internal", "client", "pagination.go"),
-		"skills/__BINARY__/SKILL.md.tmpl": filepath.Join("skills", "testapp", "SKILL.md"),
-		".goreleaser.yml.tmpl":            ".goreleaser.yml",
-		".gitignore.tmpl":                 ".gitignore",
-		".neetoci/default.yml":            filepath.Join(".neetoci", "default.yml"),
+		"cmd/__BINARY__/main.go.tmpl":        filepath.Join("cmd", "testapp", "main.go"),
+		"internal/commands/register.go.tmpl": filepath.Join("internal", "commands", "register.go"),
+		"skills/__BINARY__/SKILL.md.tmpl":    filepath.Join("skills", "testapp", "SKILL.md"),
+		".goreleaser.yml.tmpl":               ".goreleaser.yml",
+		".gitignore.tmpl":                    ".gitignore",
+		".neeto-cli.yml.tmpl":                ".neeto-cli.yml",
 	}
 
 	for in, want := range cases {
@@ -28,10 +27,16 @@ func TestRenderPath(t *testing.T) {
 }
 
 func TestRenderPath_MultipleBinaryPlaceholders(t *testing.T) {
-	v := &vars.Variables{BinaryName: "acme"}
+	v := varsFor("acme")
 	got := renderPath("a/__BINARY__/b/__BINARY__/c.go.tmpl", v)
 	want := filepath.Join("a", "acme", "b", "acme", "c.go")
 	if got != want {
 		t.Errorf("renderPath = %q, want %q", got, want)
 	}
+}
+
+func varsFor(binary string) *vars.Variables {
+	v := &vars.Variables{}
+	v.BinaryName = binary
+	return v
 }

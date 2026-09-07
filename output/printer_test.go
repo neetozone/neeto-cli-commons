@@ -164,6 +164,8 @@ func TestPrintQuiet_PrintsOnlyTheIdentifier(t *testing.T) {
 		`{"id":"a1","name":"Intro"}`:               "a1",
 		`{"meeting":{"sid":"m-002"}}`:              "m-002",
 		`{"name":"Intro"}`:                         "Intro",
+		`{"email":"a@example.com","role":"owner"}`: "a@example.com",
+		`{"name":"Intro","email":"a@example.com"}`: "Intro",
 	}
 
 	for payload, want := range cases {

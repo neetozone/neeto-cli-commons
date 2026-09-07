@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,9 +13,6 @@ import (
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
 )
 
-// renderPath translates an embedFS-relative path to its output location
-// for the given Variables. It replaces "__BINARY__" segments with the
-// binary name and strips a single trailing ".tmpl" suffix.
 func renderPath(p string, v *vars.Variables) string {
 	parts := strings.Split(p, "/")
 	for i, seg := range parts {
@@ -25,9 +23,6 @@ func renderPath(p string, v *vars.Variables) string {
 	return filepath.Join(parts...)
 }
 
-// renderFile reads embedPath from templateFS, optionally runs it through
-// text/template if it has a ".tmpl" suffix, and writes to dst. Parent
-// directories must exist.
 func renderFile(embedPath, dst string, v *vars.Variables) error {
 	data, err := fs.ReadFile(templateFS, embedPath)
 	if err != nil {
@@ -50,5 +45,14 @@ func renderFile(embedPath, dst string, v *vars.Variables) error {
 		return fmt.Errorf("execute %s: %w", embedPath, err)
 	}
 
-	return os.WriteFile(dst, buf.Bytes(), 0o644)
+	out := buf.Bytes()
+	if strings.HasSuffix(dst, ".go") {
+		formatted, err := format.Source(out)
+		if err != nil {
+			return fmt.Errorf("gofmt %s: %w", dst, err)
+		}
+		out = formatted
+	}
+
+	return os.WriteFile(dst, out, 0o644)
 }

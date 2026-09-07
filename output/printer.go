@@ -212,7 +212,7 @@ func extractIdentifier(data json.RawMessage) string {
 		}
 	}
 
-	for _, key := range []string{"sid", "id", "name"} {
+	for _, key := range []string{"sid", "id", "name", "email"} {
 		if v, ok := raw[key]; ok {
 			var s string
 			if json.Unmarshal(v, &s) == nil {

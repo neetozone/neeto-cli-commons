@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/huh"
+	"github.com/neetozone/neeto-cli-commons/config"
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
 )
 
@@ -19,6 +20,7 @@ func Ask(templateVersion string) (*vars.Variables, error) {
 	}
 
 	v := vars.Variables{TemplateVersion: templateVersion}
+	v.Tenancy = config.TenancySubdomain
 
 	// Group 1: collect PrettyName first so we can derive defaults before
 	// the rest of the form renders.
@@ -65,13 +67,21 @@ func Ask(templateVersion string) (*vars.Variables, error) {
 				Validate(validateDomain),
 			huh.NewInput().
 				Title("API base path").
-				Value(&v.ApiBasePath).
+				Value(&v.APIBasePath).
 				Validate(validateAPIBase),
 			huh.NewInput().
-				Title("Env-var override name").
-				Description("e.g. ACME_BASE_URL. Points the CLI at a staging/local server.").
-				Value(&v.EnvVar).
+				Title("Env-var prefix").
+				Description("e.g. ACME. The CLI reads ACME_BASE_URL and ACME_INSTALL_DIR.").
+				Value(&v.EnvPrefix).
 				Validate(validateEnvVar),
+			huh.NewSelect[config.Tenancy]().
+				Title("Tenancy model").
+				Description("subdomain: each customer workspace has its own subdomain. single_host: one fixed host.").
+				Options(
+					huh.NewOption("subdomain", config.TenancySubdomain),
+					huh.NewOption("single_host", config.TenancySingleHost),
+				).
+				Value(&v.Tenancy),
 		),
 		huh.NewGroup(
 			huh.NewInput().

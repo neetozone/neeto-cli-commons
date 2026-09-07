@@ -8,9 +8,6 @@ import (
 	"testing"
 )
 
-// TestGenerateAndBuild is the golden-file integration test. Given a fixed
-// answers file it generates a repo, asserts on key files/permissions, and
-// builds the resulting binary.
 func TestGenerateAndBuild(t *testing.T) {
 	if testing.Short() {
 		t.Skip("integration test; skip under -short")
@@ -33,26 +30,26 @@ func TestGenerateAndBuild(t *testing.T) {
 		t.Fatalf("Run() error = %v", err)
 	}
 
-	// Structural assertions.
 	mustExist := []string{
+		".neeto-cli.yml",
+		"product.go",
 		"cmd/testapp/main.go",
-		"internal/auth/auth.go",
-		"internal/client/client.go",
-		"internal/commands/root.go",
-		"internal/commands/auth.go",
-		"internal/commands/completion.go",
-		"internal/commands/update.go",
-		"internal/commands/setup.go",
-		"internal/output/output.go",
-		"internal/plugin/embed.go",
-		"internal/plugin/skill.md",
+		"internal/commands/register.go",
+		"internal/commands/example.go",
 		"skills/testapp/SKILL.md",
 		".goreleaser.yml",
-		".scripts/release.sh",
-		".neetoci/default.yml",
+		".neetoci/verify.yml",
 		".neetoci/release.yml",
 		".claude-plugin/plugin.json",
+		".claude-plugin/marketplace.json",
+		"commands/doctor.md",
+		"hooks/hooks.json",
 		"hooks/session-start.sh",
+		"installers/install.sh",
+		"installers/install.ps1",
+		"installers/install.cmd",
+		"mise.toml",
+		".gitignore",
 		".template-version",
 		"VERSION",
 		"Makefile",
@@ -65,9 +62,23 @@ func TestGenerateAndBuild(t *testing.T) {
 		}
 	}
 
-	// Exec manifest was applied.
-	execFiles := []string{
+	forbidden := []string{
+		"internal/auth/auth.go",
+		"internal/client/client.go",
+		"internal/output/output.go",
+		"internal/plugin/embed.go",
+		"internal/commands/root.go",
 		".scripts/release.sh",
+		".neetoci/default.yml",
+		".exec-manifest",
+	}
+	for _, f := range forbidden {
+		if _, err := os.Stat(filepath.Join(out, f)); !os.IsNotExist(err) {
+			t.Errorf("%s must not be generated any more; err=%v", f, err)
+		}
+	}
+
+	execFiles := []string{
 		".githooks/pre-commit",
 		"hooks/session-start.sh",
 		"bin/setup",
@@ -84,12 +95,6 @@ func TestGenerateAndBuild(t *testing.T) {
 		}
 	}
 
-	// Manifest file itself must NOT leak into output.
-	if _, err := os.Stat(filepath.Join(out, ".exec-manifest")); !os.IsNotExist(err) {
-		t.Errorf(".exec-manifest should not be copied; err=%v", err)
-	}
-
-	// .template-version content.
 	tv, err := os.ReadFile(filepath.Join(out, ".template-version"))
 	if err != nil {
 		t.Fatalf("read .template-version: %v", err)
@@ -98,7 +103,6 @@ func TestGenerateAndBuild(t *testing.T) {
 		t.Errorf(".template-version = %q, want %q", string(tv), "test")
 	}
 
-	// GoReleaser escaping survived rendering.
 	grl, _ := os.ReadFile(filepath.Join(out, ".goreleaser.yml"))
 	if !strings.Contains(string(grl), "{{ .Version }}") {
 		t.Errorf(".goreleaser.yml is missing literal {{ .Version }}; contents: %s", string(grl))
@@ -107,15 +111,14 @@ func TestGenerateAndBuild(t *testing.T) {
 		t.Errorf(".goreleaser.yml still has un-rendered escape sequence")
 	}
 
-	// Module path templated correctly.
 	mainGo, _ := os.ReadFile(filepath.Join(out, "cmd/testapp/main.go"))
 	if !strings.Contains(string(mainGo), "github.com/neetozone/testapp-cli/internal/commands") {
 		t.Errorf("main.go module path wrong: %s", string(mainGo))
 	}
 
-	// go mod tidy then go build — network may be required.
 	tidy := exec.Command("go", "mod", "tidy")
 	tidy.Dir = out
+	tidy.Env = append(os.Environ(), "GOPRIVATE=github.com/neetozone/*")
 	if combined, err := tidy.CombinedOutput(); err != nil {
 		t.Skipf("go mod tidy failed (network?): %v\n%s", err, combined)
 	}
@@ -126,7 +129,6 @@ func TestGenerateAndBuild(t *testing.T) {
 		t.Fatalf("go build failed: %v\n%s", err, combined)
 	}
 
-	// Help output contains every global flag.
 	help, err := exec.Command(filepath.Join(out, "testapp"), "--help").CombinedOutput()
 	if err != nil {
 		t.Fatalf("--help failed: %v\n%s", err, help)

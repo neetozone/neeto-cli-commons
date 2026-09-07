@@ -1,5 +1,3 @@
-// Package generator orchestrates rendering the embedded CLI template into
-// a brand-new target directory. It never modifies an existing directory.
 package generator
 
 import (
@@ -7,13 +5,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/neetozone/neeto-cli-commons/gen/questionnaire"
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
+	"github.com/neetozone/neeto-cli-commons/render"
 )
 
-// Options controls a single Run invocation.
 type Options struct {
 	OutputDir       string
 	ConfigPath      string
@@ -23,7 +22,6 @@ type Options struct {
 	TemplateVersion string
 }
 
-// Run executes the full generation pipeline.
 func Run(opts Options) error {
 	v, err := loadVariables(opts)
 	if err != nil {
@@ -39,8 +37,8 @@ func Run(opts Options) error {
 		return err
 	}
 
-	if err := restorePermissions(target, v); err != nil {
-		return fmt.Errorf("chmod exec files: %w", err)
+	if err := writeCommonsFiles(target, v); err != nil {
+		return err
 	}
 
 	if err := os.WriteFile(
@@ -149,5 +147,46 @@ func printNextSteps(target string, v *vars.Variables) {
 	fmt.Printf("  make build\n")
 	fmt.Printf("  ./%s --help\n", v.BinaryName)
 	fmt.Println()
-	fmt.Println("Add product-specific commands per docs/adding-commands.md.")
+	fmt.Println("Replace internal/commands/example.go with this product's real commands.")
+}
+
+func writeCommonsFiles(target string, v *vars.Variables) error {
+	files, err := render.All(v.Product)
+	if err != nil {
+		return err
+	}
+
+	names := make([]string, 0, len(files))
+	for name := range files {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		dst := filepath.Join(target, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return err
+		}
+		mode := fs.FileMode(0o644)
+		if render.IsExecutable(name) {
+			mode = 0o755
+		}
+		if err := os.WriteFile(dst, files[name], mode); err != nil {
+			return err
+		}
+		if err := os.Chmod(dst, mode); err != nil {
+			return err
+		}
+	}
+
+	readmePath := filepath.Join(target, "README.md")
+	existing, err := os.ReadFile(readmePath)
+	if err != nil {
+		return err
+	}
+	merged, err := render.MergeREADME(v.Product, existing)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(readmePath, merged, 0o644)
 }
