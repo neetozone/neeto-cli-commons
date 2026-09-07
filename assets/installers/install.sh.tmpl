@@ -1,0 +1,97 @@
+#!/bin/sh
+set -e
+
+BASE_URL="{{.LatestURL}}"
+INSTALL_DIR="${{"{"}}{{.InstallDirEnvVar}}:-/usr/local/bin}"
+
+detect_os() {
+  case "$(uname -s)" in
+    Linux*)  echo "linux" ;;
+    Darwin*) echo "macos" ;;
+    *)       echo "Unsupported OS: $(uname -s)" >&2; exit 1 ;;
+  esac
+}
+
+detect_arch() {
+  case "$(uname -m)" in
+    x86_64|amd64)  echo "amd64" ;;
+    arm64|aarch64) echo "arm64" ;;
+    *)             echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+  esac
+}
+
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  elif command -v openssl >/dev/null 2>&1; then
+    openssl dgst -sha256 "$1" | awk '{print $NF}'
+  else
+    echo "Cannot verify the download: none of sha256sum, shasum or openssl is available." >&2
+    exit 1
+  fi
+}
+
+OS=$(detect_os)
+ARCH=$(detect_arch)
+ARCHIVE="{{.BinaryName}}_${OS}_${ARCH}.tar.gz"
+URL="${BASE_URL}/${ARCHIVE}"
+
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT INT TERM
+
+echo "Downloading {{.PrettyName}} CLI for ${OS}/${ARCH}..."
+curl -fsSL "$URL" -o "${TMPDIR}/${ARCHIVE}"
+
+echo "Verifying checksum..."
+curl -fsSL "${BASE_URL}/SHA256SUMS" -o "${TMPDIR}/SHA256SUMS"
+EXPECTED=$(awk -v name="$ARCHIVE" '{ file = $2; sub(/^\*/, "", file); if (file == name) print $1 }' "${TMPDIR}/SHA256SUMS" | tr 'A-F' 'a-f')
+if [ -z "$EXPECTED" ]; then
+  echo "No published checksum for ${ARCHIVE}. Aborting." >&2
+  exit 1
+fi
+ACTUAL=$(sha256_of "${TMPDIR}/${ARCHIVE}" | tr 'A-F' 'a-f')
+if [ "${#ACTUAL}" -ne 64 ] || [ -n "$(printf '%s' "$ACTUAL" | tr -d '0-9a-f')" ]; then
+  echo "Could not compute a valid SHA-256 for ${ARCHIVE}. Aborting." >&2
+  exit 1
+fi
+if [ "$EXPECTED" != "$ACTUAL" ]; then
+  echo "Checksum mismatch for ${ARCHIVE}. Aborting." >&2
+  echo "  expected: ${EXPECTED}" >&2
+  echo "  actual:   ${ACTUAL}" >&2
+  exit 1
+fi
+
+echo "Extracting..."
+tar -xzf "${TMPDIR}/${ARCHIVE}" -C "$TMPDIR"
+
+echo "Installing to ${INSTALL_DIR}..."
+if [ ! -d "$INSTALL_DIR" ] && ! mkdir -p "$INSTALL_DIR" 2>/dev/null; then
+  if command -v sudo >/dev/null 2>&1; then
+    echo "${INSTALL_DIR} does not exist and cannot be created without sudo."
+    sudo mkdir -p "$INSTALL_DIR"
+  else
+    echo "Cannot create ${INSTALL_DIR} and sudo is not available." >&2
+    echo "Set {{.InstallDirEnvVar}} to a directory you own and run this script again." >&2
+    exit 1
+  fi
+fi
+if [ -w "$INSTALL_DIR" ]; then
+  install -m 0755 "${TMPDIR}/{{.BinaryName}}" "${INSTALL_DIR}/{{.BinaryName}}"
+elif command -v sudo >/dev/null 2>&1; then
+  echo "${INSTALL_DIR} is not writable, so sudo is needed."
+  echo "Set {{.InstallDirEnvVar}} to a directory you own to install without sudo."
+  sudo install -m 0755 "${TMPDIR}/{{.BinaryName}}" "${INSTALL_DIR}/{{.BinaryName}}"
+else
+  echo "Cannot write to ${INSTALL_DIR} and sudo is not available." >&2
+  echo "Set {{.InstallDirEnvVar}} to a directory you own and run this script again." >&2
+  exit 1
+fi
+
+case ":${PATH}:" in
+  *":${INSTALL_DIR}:"*) ;;
+  *) echo "Note: ${INSTALL_DIR} is not on your PATH. Add it to use '{{.BinaryName}}' directly." ;;
+esac
+
+echo "{{.PrettyName}} CLI installed successfully. Run '{{.BinaryName}} --help' to get started."

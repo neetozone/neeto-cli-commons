@@ -11,7 +11,7 @@ process — the repo, labels, CI and secrets the generator does *not* create.
 ## 1. Build the generator
 
 ```bash
-go install github.com/neetozone/neeto-cli-template/cmd/neeto-cli-gen@latest
+go install github.com/neetozone/neeto-cli-commons/gen/cmd/neeto-cli-gen@latest
 ```
 
 Or from a checkout, which is what you want if you are also changing the

@@ -1,0 +1,38 @@
+BINARY_NAME={{.BinaryName}}
+VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS=-ldflags "-s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
+INSTALL_DIR ?= $(or $({{.InstallDirEnvVar}}),/usr/local/bin)
+
+.PHONY: build test lint install clean fmt vet setup sync
+
+build: setup
+	go build $(LDFLAGS) -o $(BINARY_NAME) ./cmd/{{.BinaryName}}/
+
+test:
+	go test ./...
+
+lint:
+	golangci-lint run
+
+fmt:
+	gofmt -w .
+
+vet:
+	go vet ./...
+
+check: fmt vet test
+
+install: build
+	install -d $(INSTALL_DIR)
+	install -m 0755 $(BINARY_NAME) $(INSTALL_DIR)/$(BINARY_NAME)
+
+sync:
+	go run github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync
+
+setup:
+	git config core.hooksPath .githooks
+
+clean:
+	rm -f $(BINARY_NAME)

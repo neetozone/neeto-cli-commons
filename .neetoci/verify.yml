@@ -6,9 +6,13 @@ plan: pro
 
 paths:
   - "**/*.go"
+  - "**/*.tmpl"
   - "**/testdata/**"
   - "**/go.mod"
   - "**/go.sum"
+  - assets/**
+  - products.txt
+  - .scripts/**
   - .neetoci/**
 
 machine_type: multi
@@ -16,10 +20,21 @@ machine_type: multi
 commands:
   - checkout
   - neetoci-version go 1.26
+  - export GOPRIVATE=github.com/neetozone/*
+  - export GH_TOKEN="${GITHUB_TOKEN}"
+  - test -n "${GITHUB_TOKEN}" || (echo "GITHUB_TOKEN is not set; neeto-cli-commons is private and this job cannot fetch it, push, or publish without one." >&2; exit 1)
+  - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
   - go mod download
   - gofmt -l . | tee /tmp/fmt_output && test ! -s /tmp/fmt_output
   - go vet ./...
   - go test ./...
+  - go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+  - $(go env GOPATH)/bin/golangci-lint run
+  - (cd gen && go mod download && gofmt -l . | tee /tmp/gen_fmt_output && test ! -s /tmp/gen_fmt_output)
+  - (cd gen && go vet ./...)
+  - (cd gen && go test ./...)
+  - (cd gen && $(go env GOPATH)/bin/golangci-lint run)
+  - bash -n .scripts/release.sh && bash -n .scripts/bump.sh
 
 triggers:
   - event: branch

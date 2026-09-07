@@ -1,0 +1,64 @@
+# {{.PrettyName}} CLI
+
+{{.ShortDescription}}
+
+<!-- neeto-cli-commons:installation:start -->
+<!-- neeto-cli-commons:installation:end -->
+
+<!-- neeto-cli-commons:verify-installation:start -->
+<!-- neeto-cli-commons:verify-installation:end -->
+
+<!-- neeto-cli-commons:ai-coding-assistants:start -->
+<!-- neeto-cli-commons:ai-coding-assistants:end -->
+
+<!-- neeto-cli-commons:prerequisites:start -->
+<!-- neeto-cli-commons:prerequisites:end -->
+
+## Development
+
+### Setup
+
+```bash
+git clone https://github.com/{{.GithubOrg}}/{{.RepoName}}.git
+cd {{.RepoName}}
+bin/setup
+```
+
+This installs Go dependencies, golangci-lint, configures git hooks, and builds the binary.
+
+### Build and run
+
+```bash
+make build
+./{{.BinaryName}} --help
+```
+
+<!-- neeto-cli-commons:make-targets:start -->
+<!-- neeto-cli-commons:make-targets:end -->
+
+### Adding a command
+
+`internal/commands/example.go` is a working two-command resource — a `list` and a
+`show`. Copy it, rename the resource, point it at the right API path, and delete the
+example. Registration happens in `init()`, so a new file needs no wiring anywhere else.
+
+### Pointing to a local or staging server
+
+By default the CLI targets `https://{subdomain}.{{.Domain}}`. Set `{{.EnvPrefix}}_BASE_URL`
+to point somewhere else:
+
+```bash
+export {{.EnvPrefix}}_BASE_URL=http://acme.lvh.me:3000
+{{.BinaryName}} login --subdomain acme
+{{.BinaryName}} doctor
+```
+
+<!-- neeto-cli-commons:global-flags:start -->
+<!-- neeto-cli-commons:global-flags:end -->
+
+<!-- neeto-cli-commons:release:start -->
+<!-- neeto-cli-commons:release:end -->
+
+## Support
+
+Questions or problems: {{.SupportEmail}}

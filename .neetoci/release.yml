@@ -1,0 +1,20 @@
+version: v1.0
+
+fail_fast: true
+
+plan: pro
+
+machine_type: multi
+
+commands:
+  - checkout
+  - neetoci-version go 1.26
+  - export GOPRIVATE=github.com/neetozone/*
+  - export GH_TOKEN="${GITHUB_TOKEN}"
+  - test -n "${GITHUB_TOKEN}" || (echo "GITHUB_TOKEN is not set; neeto-cli-commons is private and this job cannot fetch it, push, or publish without one." >&2; exit 1)
+  - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+  - bash .scripts/release.sh
+
+triggers:
+  - event: branch
+    branch_name: main

@@ -1,0 +1,65 @@
+package commands
+
+import (
+	"fmt"
+
+	"github.com/neetozone/neeto-cli-commons/output"
+	"github.com/spf13/cobra"
+)
+
+var examplesCmd = &cobra.Command{
+	Use:   "examples",
+	Short: "Manage examples",
+}
+
+var examplesListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List examples",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		data, err := c.Get("/examples", paginationParams(cmd))
+		if err != nil {
+			return err
+		}
+
+		printList(data, "examples", nil)
+		return nil
+	},
+}
+
+var examplesShowCmd = &cobra.Command{
+	Use:   "show <id>",
+	Short: "Show an example",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := getClient(cmd)
+		if err != nil {
+			return err
+		}
+
+		data, err := c.Get(fmt.Sprintf("/examples/%s", args[0]), nil)
+		if err != nil {
+			return err
+		}
+
+		breadcrumbs := []output.Breadcrumb{
+			{Label: "List examples", Command: "{{.BinaryName}} examples list"},
+		}
+
+		printResource(data, breadcrumbs)
+		return nil
+	},
+}
+
+func init() {
+	register(func(root *cobra.Command) { root.AddCommand(examplesCmd) })
+
+	examplesCmd.AddCommand(examplesListCmd)
+	addPaginationFlags(examplesListCmd)
+
+	examplesCmd.AddCommand(examplesShowCmd)
+}

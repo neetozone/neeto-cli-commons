@@ -1,0 +1,39 @@
+<!-- neeto-cli-commons:installation:start -->
+## Installation
+
+### macOS / Linux
+
+**Homebrew (recommended on macOS):**
+
+```bash
+brew install {{.BrewFormula}}
+```
+
+**Shell script:**
+
+```bash
+curl -fsSL {{.LatestURL}}/install.sh | sh
+```
+
+This verifies the download's SHA-256 checksum against the published `SHA256SUMS`,
+then installs to `/usr/local/bin` (may prompt for sudo). Set `{{.InstallDirEnvVar}}`
+to a directory you own to install without sudo.
+
+### Windows
+
+**PowerShell:**
+
+```powershell
+irm {{.LatestURL}}/install.ps1 | iex
+```
+
+**Command Prompt (CMD):**
+
+```cmd
+curl -fsSL {{.LatestURL}}/install.cmd -o install.cmd && install.cmd
+```
+
+Both verify the download's SHA-256 checksum before installing to
+`%LOCALAPPDATA%\Programs\{{.BinaryName}}` and adding it to your user PATH. Set
+`{{.InstallDirEnvVar}}` to install somewhere else.
+<!-- neeto-cli-commons:installation:end -->

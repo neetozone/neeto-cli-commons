@@ -1,0 +1,11 @@
+pretty_name: {{.PrettyName}}
+binary_name: {{.BinaryName}}
+short_description: {{.ShortDescription}}
+long_description: {{.LongDescription}}
+api_base_path: {{.APIBasePath}}
+tenancy: {{.Tenancy}}
+root_examples:
+  - {{.BinaryName}} login
+  - {{.BinaryName}} whoami
+priority_fields: [{{range $i, $f := .PriorityFields}}{{if $i}}, {{end}}{{$f}}{{end}}]
+commons_version: {{.CommonsVersion}}

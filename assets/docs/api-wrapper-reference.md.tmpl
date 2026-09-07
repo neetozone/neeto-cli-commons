@@ -1,0 +1,70 @@
+# Shared API reference
+
+The helpers a command in this repo can call. They come from
+`github.com/neetozone/neeto-cli-commons` and behave identically in all eleven neeto CLIs.
+
+This file is generated. Edit it in neeto-cli-commons, not here.
+
+## Talking to the API
+
+`getClient(cmd)` returns a client already pointed at the right host and carrying the caller's
+credentials, so a command never builds a URL or reads a token itself.
+
+| Call | Sends |
+|---|---|
+| `c.Get(path, params)` | `GET`, with `params` as the query string. Pass `nil` for none. |
+| `c.Post(path, body)` | `POST` with a JSON body. |
+| `c.Put(path, body)` | `PUT` with a JSON body. This is the usual update verb. |
+| `c.Patch(path, body)` | `PATCH` with a JSON body, for endpoints that expect a partial update. |
+| `c.Delete(path)` | `DELETE`. |
+
+`path` is relative to `{{.APIBasePath}}`. Every call returns the raw response body, so a command
+passes it straight to a printer rather than unmarshalling it.
+
+An error carries the server's own message, so returning it from `RunE` prints something useful
+without any handling in the command.
+
+## Printing
+
+Pick by shape, never by output format — one printer covers the table, `--json`, `--quiet` and
+`--toon`.
+
+| Call | Use for |
+|---|---|
+| `printList(data, key, breadcrumbs)` | A collection. `key` names the array inside the body. Pagination is picked up automatically. |
+| `printResource(data, breadcrumbs)` | One record. |
+| `printActionResult(data, breadcrumbs)` | A create, update or other action. Under `--quiet` it prints just the identifier. |
+| `printMessage(text)` | A confirmation with no record behind it. |
+
+Breadcrumbs are the "what to run next" hints printed under a record:
+
+```go
+[]output.Breadcrumb{
+	{Label: "List widgets", Command: "{{.BinaryName}} widgets list"},
+}
+```
+
+Columns are chosen from `priority_fields` in `.neeto-cli.yml`, identity first, up to seven
+columns. Add a field there rather than building a table by hand.
+
+## Paging
+
+`addPaginationFlags(cmd)` adds `--page` and `--page-size`; `paginationParams(cmd)` turns them into
+query parameters. `--page` defaults to 0, meaning the first page, in every product.
+
+## Flags
+
+| Call | Effect |
+|---|---|
+| `markFlagsRequired(cmd, "name", ...)` | Fails early when a flag is missing, and marks it in help. |
+| `allowJSONFileToSatisfyRequiredFlags(cmd)` | Lets `--json-file` stand in for the required flags. |
+| `readJSONFile(path)` | Reads a `--json-file` payload. |
+| `splitCSV(value)` | Splits a comma-separated flag value. |
+
+Keep only the wrappers this repo actually uses in `internal/commands/register.go`.
+
+## Global flags
+
+`--subdomain`, `--json`, `--quiet` and `--toon` are added to every command by the shared code. A
+command never declares them and never checks them; using the printers above is what makes them
+work.
