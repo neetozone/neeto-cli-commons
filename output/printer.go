@@ -297,19 +297,28 @@ func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
 	var p struct {
 		CurrentPageNumber int `json:"current_page_number"`
 		CurrentPage       int `json:"current_page"`
+		Page              int `json:"page"`
 		TotalPages        int `json:"total_pages"`
 		TotalRecords      int `json:"total_records"`
+		TotalCount        int `json:"total_count"`
 	}
 	if err := json.Unmarshal(pagination, &p); err != nil {
 		return
 	}
 
-	page := p.CurrentPageNumber
-	if page == 0 {
-		page = p.CurrentPage
-	}
+	page := firstNonZero(p.CurrentPageNumber, p.CurrentPage, p.Page)
+	total := firstNonZero(p.TotalRecords, p.TotalCount)
 
-	fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, p.TotalPages, p.TotalRecords)
+	fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, p.TotalPages, total)
+}
+
+func firstNonZero(values ...int) int {
+	for _, v := range values {
+		if v != 0 {
+			return v
+		}
+	}
+	return 0
 }
 
 func (pr *Printer) printBreadcrumbs(breadcrumbs []Breadcrumb) {

@@ -62,9 +62,9 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 // counters at the top level instead of nested, which is how NeetoDeploy's API
 // answers. Without this those responses lose their page line entirely.
 func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
-	keys := []string{"total_count", "total_pages", "current_page_number", "current_page", "page_size", "per_page"}
+	keys := []string{"total_count", "total_records", "total_pages", "current_page_number", "current_page", "page_size", "per_page"}
 
-	block := make(map[string]json.RawMessage, len(keys))
+	block := make(map[string]json.RawMessage, len(keys)+1)
 	for _, key := range keys {
 		if v, ok := parsed[key]; ok {
 			block[key] = v
@@ -72,6 +72,13 @@ func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
 	}
 	if block["total_pages"] == nil {
 		return nil
+	}
+	// NeetoInvoice names the current page "page". Only trust that reading when
+	// the body already looks like a paginated envelope.
+	if block["current_page"] == nil && block["current_page_number"] == nil {
+		if v, ok := parsed["page"]; ok {
+			block["current_page"] = v
+		}
 	}
 
 	out, err := json.Marshal(block)

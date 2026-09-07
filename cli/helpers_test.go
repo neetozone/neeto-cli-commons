@@ -97,3 +97,26 @@ func TestPaginationParamsDefaultsTheMaxToAHundred(t *testing.T) {
 		t.Errorf("page_size = %q, want 100", got)
 	}
 }
+
+func TestPrintListReadsNeetoInvoicePaginationKeys(t *testing.T) {
+	a, buf := listPrinterApp(t)
+
+	a.PrintList(json.RawMessage(`{"time_entries":[{"id":1}],"total_count":42,"total_pages":5,"page":2,"page_size":10}`), "time_entries", nil)
+
+	out := buf.String()
+	for _, want := range []string{`"current_page"`, `"total_count": 42`, `"total_pages": 5`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %s in: %s", want, out)
+		}
+	}
+}
+
+func TestPrintListIgnoresAPageKeyWithoutTotalPages(t *testing.T) {
+	a, buf := listPrinterApp(t)
+
+	a.PrintList(json.RawMessage(`{"time_entries":[{"id":1}],"page":2}`), "time_entries", nil)
+
+	if strings.Contains(buf.String(), "pagination") {
+		t.Errorf("a body with no total_pages must not grow a pagination block: %s", buf.String())
+	}
+}

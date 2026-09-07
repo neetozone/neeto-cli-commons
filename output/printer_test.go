@@ -496,3 +496,20 @@ func TestPrintQuiet_NonQuietModeFallsThroughToPrint(t *testing.T) {
 		t.Errorf("PrintQuiet = %q, want %q", buf.String(), want)
 	}
 }
+
+func TestPrintPaginationSummaryAcceptsEitherTotalKey(t *testing.T) {
+	cases := map[string]string{
+		`{"current_page_number":2,"total_pages":5,"total_records":42}`: "Page 2 of 5 (42 total records)",
+		`{"page":2,"total_pages":5,"total_count":42}`:                  "Page 2 of 5 (42 total records)",
+		`{"current_page":3,"total_pages":5,"total_count":42}`:          "Page 3 of 5 (42 total records)",
+	}
+
+	for payload, want := range cases {
+		pr, buf := newPrettyPrinter()
+		pr.printPaginationSummary(json.RawMessage(payload))
+
+		if got := strings.TrimSpace(buf.String()); got != want {
+			t.Errorf("payload %s = %q, want %q", payload, got, want)
+		}
+	}
+}
