@@ -209,6 +209,9 @@ func TestNeetociUsesVerifyAndTheReleaseShim(t *testing.T) {
 	if strings.Contains(release, ".scripts/release.sh") {
 		t.Error("release.yml still runs a per-repo release script")
 	}
+	if !strings.Contains(release, `-H "Authorization: token ${GITHUB_TOKEN}"`) {
+		t.Error("release.yml fetches the release script without a token; neeto-cli-commons is private, so raw.githubusercontent.com answers 404")
+	}
 }
 
 func TestCommonsRefFallsBackToMain(t *testing.T) {

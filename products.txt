@@ -1,0 +1,11 @@
+neeto-auth-cli
+neeto-cal-cli
+neeto-ci-cli-v2
+neeto-deploy-cli-go
+neeto-desk-cli
+neeto-form-cli
+neeto-invoice-cli
+neeto-kb-cli
+neeto-planner-cli
+neeto-playdash-cli
+neeto-record-cli
