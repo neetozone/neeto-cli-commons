@@ -14,7 +14,8 @@ credentials, so a command never builds a URL or reads a token itself.
 |---|---|
 | `c.Get(path, params)` | `GET`, with `params` as the query string. Pass `nil` for none. |
 | `c.Post(path, body)` | `POST` with a JSON body. |
-| `c.Patch(path, body)` | `PATCH` with a JSON body. |
+| `c.Put(path, body)` | `PUT` with a JSON body. This is the usual update verb. |
+| `c.Patch(path, body)` | `PATCH` with a JSON body, for endpoints that expect a partial update. |
 | `c.Delete(path)` | `DELETE`. |
 
 `path` is relative to `{{.APIBasePath}}`. Every call returns the raw response body, so a command

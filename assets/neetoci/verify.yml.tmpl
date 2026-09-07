@@ -28,10 +28,10 @@ commands:
   - export GOPRIVATE=github.com/neetozone/*
   - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
   - go mod download
+  - go run github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync --check
   - gofmt -l . | tee /tmp/fmt_output && test ! -s /tmp/fmt_output
   - go vet ./...
   - go test ./...
-  - go run github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync --check
 
 triggers:
   - event: branch

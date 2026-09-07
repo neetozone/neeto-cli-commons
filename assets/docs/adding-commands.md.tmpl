@@ -74,7 +74,28 @@ These are what keep the eleven neeto CLIs looking like one product. Follow them.
 - Mark a required flag with `markFlagsRequired`. Do not write `(required)` into the flag's
   description — it is added when help is rendered and left out of the machine-readable catalog.
 - A flag that reads a payload from a file is `--json-file`.
+- Split a comma-separated flag with `splitCSV`, never `strings.Split` — it trims the spaces a
+  user naturally types after each comma.
 - `register.go` should carry only the wrappers this repo actually calls.
+
+## Testing a command
+
+`getClient`, `printList`, `printResource`, `printActionResult` and `printMessage` all read a
+package-level app that `main` sets up, so a test calling one of them directly panics unless the
+package is bootstrapped first. Do that once per package, in `internal/commands/main_test.go`:
+
+```go
+func TestMain(m *testing.M) {
+	cfg, err := config.Parse(product.ConfigYAML)
+	if err != nil {
+		panic(err)
+	}
+	Register(cli.New(*cfg))
+	os.Exit(m.Run())
+}
+```
+
+`paginationParams` and `addPaginationFlags` need no bootstrap.
 
 ## Before you push
 

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -350,7 +351,7 @@ func loginServer(t *testing.T, statusHandler http.HandlerFunc) *httptest.Server 
 	}))
 }
 
-func TestLogin_BailsAfterFiveConsecutiveErrors(t *testing.T) {
+func TestLogin_BailsAfterTooManyConsecutiveErrors(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	var statusCalls int32
@@ -369,11 +370,12 @@ func TestLogin_BailsAfterFiveConsecutiveErrors(t *testing.T) {
 	if err == nil {
 		t.Fatal("Login() expected error after repeated status failures")
 	}
-	if !strings.Contains(err.Error(), "Could not check authentication status after 5 attempts") {
-		t.Errorf("error = %q, want it to mention 5 attempts", err.Error())
+	want := fmt.Sprintf("Could not check authentication status after %d attempts", maxConsecutiveErrors)
+	if !strings.Contains(err.Error(), want) {
+		t.Errorf("error = %q, want it to mention %d attempts", err.Error(), maxConsecutiveErrors)
 	}
-	if got := atomic.LoadInt32(&statusCalls); got != 5 {
-		t.Errorf("status polls = %d, want 5", got)
+	if got := atomic.LoadInt32(&statusCalls); got != int32(maxConsecutiveErrors) {
+		t.Errorf("status polls = %d, want %d", got, maxConsecutiveErrors)
 	}
 }
 

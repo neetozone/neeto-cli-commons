@@ -227,3 +227,16 @@ func TestSetupClaudeRefusesWithoutClaudeCode(t *testing.T) {
 		t.Fatalf("expected a missing-Claude-Code error, got %v", err)
 	}
 }
+
+func TestSetupRefusesToWriteAnEmptySkill(t *testing.T) {
+	p := subdomainProduct()
+	p.SkillMD = []byte("---\nname: neetodesk\n---\n")
+	a, _ := newTestApp(t, p)
+
+	for _, target := range []string{"cursor", "windsurf", "copilot", "gemini", "codex"} {
+		a.Root().SetArgs([]string{"setup", target})
+		if err := a.Root().Execute(); err == nil {
+			t.Errorf("setup %s wrote a file with no skill content instead of failing", target)
+		}
+	}
+}

@@ -181,13 +181,30 @@ func AllowJSONFileToSatisfyRequiredFlags(cmd *cobra.Command) {
 		if err != nil {
 			return err
 		}
+		nested := unwrapSingleObject(fileData)
 		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-			if jsonValueSatisfiesFlag(fileData[strings.ReplaceAll(flag.Name, "-", "_")]) {
+			key := strings.ReplaceAll(flag.Name, "-", "_")
+			if jsonValueSatisfiesFlag(fileData[key]) || jsonValueSatisfiesFlag(nested[key]) {
 				delete(flag.Annotations, cobra.BashCompOneRequiredFlag)
 			}
 		})
 		return nil
 	}
+}
+
+// unwrapSingleObject returns the inner object of a payload written as a single
+// wrapping key, such as NeetoAuth's {"user": {...}}. Anything else yields nil,
+// so an outer key always takes precedence over an inner one.
+func unwrapSingleObject(data map[string]any) map[string]any {
+	if len(data) != 1 {
+		return nil
+	}
+	for _, v := range data {
+		if inner, ok := v.(map[string]any); ok {
+			return inner
+		}
+	}
+	return nil
 }
 
 func jsonValueSatisfiesFlag(value any) bool {

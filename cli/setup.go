@@ -74,6 +74,9 @@ func (a *App) newSetupCursorCommand() *cobra.Command {
 		Short: "Write " + a.Product.PrettyName + " rules for Cursor IDE",
 		Long:  a.ruleFileHelp(target),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := a.requireSkill(); err != nil {
+				return err
+			}
 			return writeRuleFile(cmd.OutOrStdout(), target, a.cursorContent())
 		},
 	}
@@ -96,6 +99,9 @@ func (a *App) newSetupWindsurfCommand() *cobra.Command {
 		Short: "Write " + a.Product.PrettyName + " rules for Windsurf IDE",
 		Long:  a.ruleFileHelp(target),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := a.requireSkill(); err != nil {
+				return err
+			}
 			return writeRuleFile(cmd.OutOrStdout(), target, a.windsurfContent())
 		},
 	}
@@ -118,6 +124,9 @@ func (a *App) newSetupCopilotCommand() *cobra.Command {
 		Short: "Add " + a.Product.PrettyName + " instructions for GitHub Copilot",
 		Long:  a.sectionHelp(target),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := a.requireSkill(); err != nil {
+				return err
+			}
 			return a.writeSection(cmd.OutOrStdout(), target, a.Plugin.SkillBody())
 		},
 	}
@@ -130,6 +139,9 @@ func (a *App) newSetupGeminiCommand() *cobra.Command {
 		Short: "Add " + a.Product.PrettyName + " instructions for Gemini CLI",
 		Long:  a.sectionHelp(target),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := a.requireSkill(); err != nil {
+				return err
+			}
 			return a.writeSection(cmd.OutOrStdout(), target, a.Plugin.SkillBody())
 		},
 	}
@@ -142,9 +154,19 @@ func (a *App) newSetupCodexCommand() *cobra.Command {
 		Short: "Add " + a.Product.PrettyName + " instructions for OpenAI Codex",
 		Long:  a.sectionHelp(target),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := a.requireSkill(); err != nil {
+				return err
+			}
 			return a.writeSection(cmd.OutOrStdout(), target, a.Plugin.SkillBody())
 		},
 	}
+}
+
+func (a *App) requireSkill() error {
+	if strings.TrimSpace(a.Plugin.SkillBody()) == "" {
+		return fmt.Errorf("Could not build the %s instructions: skill content is empty.", a.Product.PrettyName)
+	}
+	return nil
 }
 
 func (a *App) sectionHelp(target string) string {

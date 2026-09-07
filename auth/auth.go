@@ -19,7 +19,7 @@ import (
 const (
 	defaultPollInterval  = 2 * time.Second
 	defaultPollTimeout   = 5 * time.Minute
-	maxConsecutiveErrors = 5
+	maxConsecutiveErrors = 30
 )
 
 type Auth struct {
