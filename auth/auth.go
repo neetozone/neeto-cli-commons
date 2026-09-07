@@ -85,27 +85,27 @@ func (a *Auth) Login(subdomain string) (*Credentials, error) {
 	}
 
 	loginURL := a.LoginURL(subdomain, loginToken)
-	fmt.Fprintln(a.out(), "Opening browser for authentication...")
-	fmt.Fprintf(a.out(), "If the browser doesn't open, visit: %s\n", loginURL)
+	_, _ = fmt.Fprintln(a.out(), "Opening browser for authentication...")
+	_, _ = fmt.Fprintf(a.out(), "If the browser doesn't open, visit: %s\n", loginURL)
 	if err := a.openBrowser(loginURL); err != nil {
-		fmt.Fprintf(a.out(), "Could not open browser: %v\n", err)
+		_, _ = fmt.Fprintf(a.out(), "Could not open browser: %v\n", err)
 	}
 
-	fmt.Fprint(a.out(), "Waiting for authentication")
+	_, _ = fmt.Fprint(a.out(), "Waiting for authentication")
 	deadline := time.Now().Add(a.pollTimeout())
 	consecutiveErrors := 0
 	var lastErr error
 
 	for time.Now().Before(deadline) {
 		time.Sleep(a.pollInterval())
-		fmt.Fprint(a.out(), ".")
+		_, _ = fmt.Fprint(a.out(), ".")
 
 		status, email, sessionToken, err := a.checkStatus(baseURL, loginToken)
 		if err != nil {
 			consecutiveErrors++
 			lastErr = err
 			if consecutiveErrors >= maxConsecutiveErrors {
-				fmt.Fprintln(a.out())
+				_, _ = fmt.Fprintln(a.out())
 				return nil, fmt.Errorf("Could not check authentication status after %d attempts: %w", consecutiveErrors, lastErr)
 			}
 			continue
@@ -114,7 +114,7 @@ func (a *Auth) Login(subdomain string) (*Credentials, error) {
 
 		switch status {
 		case "authenticated":
-			fmt.Fprintln(a.out(), " done!")
+			_, _ = fmt.Fprintln(a.out(), " done!")
 			creds := Credentials{
 				Subdomain:    subdomain,
 				Email:        email,
@@ -130,12 +130,12 @@ func (a *Auth) Login(subdomain string) (*Credentials, error) {
 			}
 			return &creds, nil
 		case "expired":
-			fmt.Fprintln(a.out())
+			_, _ = fmt.Fprintln(a.out())
 			return nil, fmt.Errorf("Authentication session expired. Please try again.")
 		}
 	}
 
-	fmt.Fprintln(a.out())
+	_, _ = fmt.Fprintln(a.out())
 	return nil, fmt.Errorf("%s CLI authentication timed out after %d minutes. Please try again.",
 		a.product.PrettyName, int(a.pollTimeout()/time.Minute))
 }

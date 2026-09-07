@@ -56,7 +56,7 @@ func (v *Variables) Validate() error {
 		{"repo_name", v.RepoName, `^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$`, "valid GitHub repo name"},
 		{"module_path", v.ModulePath, `^[a-zA-Z0-9][a-zA-Z0-9._/-]*$`, "valid Go module path"},
 		{"domain", v.Domain, `^[a-z0-9][a-z0-9.-]*[a-z0-9]$`, "valid host name"},
-		{"api_base_path", v.APIBasePath, `^/.*`, "must start with /"},
+		{"api_base_path", v.APIBasePath, `^/.+`, "must start with / and be non-empty"},
 		{"env_prefix", v.EnvPrefix, `^[A-Z][A-Z0-9_]*$`, "UPPER_SNAKE_CASE"},
 		{"homebrew_tap", v.HomebrewTap, `^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$`, "owner/repo"},
 		{"go_version", v.GoVersion, `^\d+\.\d+(\.\d+)?$`, "semver-ish"},

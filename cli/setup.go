@@ -55,13 +55,13 @@ func (a *App) newSetupClaudeCommand() *cobra.Command {
 			}
 
 			out := cmd.OutOrStdout()
-			fmt.Fprintf(out, "%s plugin extracted to %s\n", pretty, dest)
-			fmt.Fprintln(out)
-			fmt.Fprintln(out, "To finish installation, open Claude Code and run these slash commands:")
-			fmt.Fprintf(out, "  /plugin marketplace add %s\n", dest)
-			fmt.Fprintf(out, "  /plugin install %s@%s\n", a.Plugin.Name(), a.Plugin.MarketplaceName())
-			fmt.Fprintln(out)
-			fmt.Fprintln(out, "(Claude Code installs plugins via interactive slash commands — there is no shell equivalent today.)")
+			_, _ = fmt.Fprintf(out, "%s plugin extracted to %s\n", pretty, dest)
+			_, _ = fmt.Fprintln(out)
+			_, _ = fmt.Fprintln(out, "To finish installation, open Claude Code and run these slash commands:")
+			_, _ = fmt.Fprintf(out, "  /plugin marketplace add %s\n", dest)
+			_, _ = fmt.Fprintf(out, "  /plugin install %s@%s\n", a.Plugin.Name(), a.Plugin.MarketplaceName())
+			_, _ = fmt.Fprintln(out)
+			_, _ = fmt.Fprintln(out, "(Claude Code installs plugins via interactive slash commands — there is no shell equivalent today.)")
 			return nil
 		},
 	}
@@ -196,8 +196,8 @@ func (a *App) writeSection(w io.Writer, target, body string) error {
 
 func reportWrite(w io.Writer, target string, existed bool) {
 	if existed {
-		fmt.Fprintf(w, "Updated %s\n", target)
+		_, _ = fmt.Fprintf(w, "Updated %s\n", target)
 		return
 	}
-	fmt.Fprintf(w, "Wrote %s\n", target)
+	_, _ = fmt.Fprintf(w, "Wrote %s\n", target)
 }

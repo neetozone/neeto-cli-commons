@@ -17,8 +17,8 @@ func (a *App) newUpdateCommand() *cobra.Command {
 		Short: "Update the CLI to the latest version",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			method, command := a.resolveUpdate(runtime.GOOS, isHomebrewInstall())
-			fmt.Fprintf(cmd.OutOrStdout(), "Detected %s install.\n", method)
-			fmt.Fprintf(cmd.OutOrStdout(), "Running: %s\n", command)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Detected %s install.\n", method)
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Running: %s\n", command)
 			return runShell(command)
 		},
 	}

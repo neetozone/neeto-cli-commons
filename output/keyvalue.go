@@ -83,10 +83,10 @@ func (pr *Printer) renderFields(fields []field, depth int) {
 	for _, f := range fields {
 		label := FormatHeader(f.key)
 		if !expands(f.value, depth) {
-			fmt.Fprintf(pr.w(), "%s%-*s  %s\n", prefix, labelWidth, label, inlineValue(f.value))
+			_, _ = fmt.Fprintf(pr.w(), "%s%-*s  %s\n", prefix, labelWidth, label, inlineValue(f.value))
 			continue
 		}
-		fmt.Fprintf(pr.w(), "%s%s\n", prefix, label)
+		_, _ = fmt.Fprintf(pr.w(), "%s%s\n", prefix, label)
 		pr.expand(f, depth+1)
 	}
 }
@@ -143,7 +143,7 @@ func (pr *Printer) printLabelValues(items []interface{}, depth int) {
 
 	for _, item := range items {
 		obj, _ := item.(map[string]interface{})
-		fmt.Fprintf(pr.w(), "%s%-*s  %s\n", prefix, labelWidth, responseLabel(obj), inlineValue(obj["value"]))
+		_, _ = fmt.Fprintf(pr.w(), "%s%-*s  %s\n", prefix, labelWidth, responseLabel(obj), inlineValue(obj["value"]))
 	}
 }
 
@@ -182,7 +182,7 @@ func responseLabel(obj map[string]interface{}) string {
 func (pr *Printer) printRecordBlocks(raws []json.RawMessage, rows []map[string]interface{}) {
 	for i := range rows {
 		if i > 0 {
-			fmt.Fprintln(pr.w())
+			_, _ = fmt.Fprintln(pr.w())
 		}
 		fields, ok := decodeFields(raws[i])
 		if !ok {
@@ -237,12 +237,12 @@ func (pr *Printer) printIndentedJSON(v interface{}, indent int) {
 	out, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		if raw, ok := v.(json.RawMessage); ok {
-			fmt.Fprintf(pr.w(), "%s%s\n", indentPrefix(indent), string(raw))
+			_, _ = fmt.Fprintf(pr.w(), "%s%s\n", indentPrefix(indent), string(raw))
 		}
 		return
 	}
 	prefix := indentPrefix(indent)
 	for _, line := range strings.Split(string(out), "\n") {
-		fmt.Fprintf(pr.w(), "%s%s\n", prefix, line)
+		_, _ = fmt.Fprintf(pr.w(), "%s%s\n", prefix, line)
 	}
 }

@@ -40,7 +40,7 @@ func newSpinner(msg string, out io.Writer, interactive bool) *Spinner {
 func (s *Spinner) Start() {
 	s.started = time.Now()
 	if !s.interactive {
-		fmt.Fprintf(s.out, "%s...\n", s.msg)
+		_, _ = fmt.Fprintf(s.out, "%s...\n", s.msg)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (s *Spinner) Start() {
 					return
 				}
 				elapsed := time.Since(s.started).Round(time.Second)
-				fmt.Fprintf(s.out, "\r\033[K%s %s… (%s)", spinnerFrames[frame%len(spinnerFrames)], s.msg, elapsed)
+				_, _ = fmt.Fprintf(s.out, "\r\033[K%s %s… (%s)", spinnerFrames[frame%len(spinnerFrames)], s.msg, elapsed)
 				s.mu.Unlock()
 				frame++
 			}
@@ -76,7 +76,7 @@ func (s *Spinner) UpdateMessage(msg string) {
 	}
 	s.msg = msg
 	if !s.interactive {
-		fmt.Fprintf(s.out, "%s...\n", msg)
+		_, _ = fmt.Fprintf(s.out, "%s...\n", msg)
 	}
 }
 
@@ -97,7 +97,7 @@ func (s *Spinner) Stop() {
 	s.stopped = true
 	close(s.done)
 	if s.interactive {
-		fmt.Fprint(s.out, "\r\033[K")
+		_, _ = fmt.Fprint(s.out, "\r\033[K")
 	}
 }
 
@@ -110,7 +110,7 @@ func (s *Spinner) finish(mark, msg string) {
 	s.stopped = true
 	close(s.done)
 	if s.interactive {
-		fmt.Fprint(s.out, "\r\033[K")
+		_, _ = fmt.Fprint(s.out, "\r\033[K")
 	}
-	fmt.Fprintf(s.out, "%s %s\n", mark, msg)
+	_, _ = fmt.Fprintf(s.out, "%s %s\n", mark, msg)
 }

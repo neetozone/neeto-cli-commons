@@ -40,7 +40,7 @@ func run(args []string, stdout io.Writer) error {
 	}
 
 	if *env {
-		fmt.Fprint(stdout, render.ShellEnv(*product))
+		_, _ = fmt.Fprint(stdout, render.ShellEnv(*product))
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func writeTree(product config.Product, dir string, files map[string][]byte, merg
 		if err := os.Chmod(dst, mode); err != nil {
 			return err
 		}
-		fmt.Fprintln(stdout, "wrote "+name)
+		_, _ = fmt.Fprintln(stdout, "wrote "+name)
 	}
 
 	if !mergeReadme {
@@ -83,7 +83,7 @@ func writeTree(product config.Product, dir string, files map[string][]byte, merg
 	path := filepath.Join(dir, "README.md")
 	existing, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		fmt.Fprintln(stdout, "skipped README.md: no README.md in "+dir)
+		_, _ = fmt.Fprintln(stdout, "skipped README.md: no README.md in "+dir)
 		return nil
 	}
 	if err != nil {
@@ -94,7 +94,7 @@ func writeTree(product config.Product, dir string, files map[string][]byte, merg
 		return err
 	}
 	if missing := render.MissingSections(existing); len(missing) > 0 {
-		fmt.Fprintln(stdout, "README.md has no markers for: "+strings.Join(missing, ", "))
+		_, _ = fmt.Fprintln(stdout, "README.md has no markers for: "+strings.Join(missing, ", "))
 	}
 	if bytes.Equal(merged, existing) {
 		return nil
@@ -102,7 +102,7 @@ func writeTree(product config.Product, dir string, files map[string][]byte, merg
 	if err := os.WriteFile(path, merged, 0o644); err != nil {
 		return err
 	}
-	fmt.Fprintln(stdout, "wrote README.md")
+	_, _ = fmt.Fprintln(stdout, "wrote README.md")
 	return nil
 }
 
@@ -150,7 +150,7 @@ func checkTree(product config.Product, dir string, files map[string][]byte, merg
 	}
 
 	if len(stale) == 0 {
-		fmt.Fprintln(stdout, "neeto-cli-sync: everything is up to date.")
+		_, _ = fmt.Fprintln(stdout, "neeto-cli-sync: everything is up to date.")
 		return nil
 	}
 	return fmt.Errorf("neeto-cli-sync --check failed; run neeto-cli-sync to update:\n  %s",

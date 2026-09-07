@@ -37,7 +37,7 @@ func (a *App) promptSubdomain(cmd *cobra.Command) (string, error) {
 
 	subdomain, _ := cmd.Flags().GetString("subdomain")
 	if subdomain == "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "Enter your %s subdomain (e.g., 'acme' for acme.%s): ",
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Enter your %s subdomain (e.g., 'acme' for acme.%s): ",
 			a.Product.PrettyName, a.Product.Domain)
 		input, _ := bufio.NewReader(cmd.InOrStdin()).ReadString('\n')
 		subdomain = strings.TrimSpace(input)

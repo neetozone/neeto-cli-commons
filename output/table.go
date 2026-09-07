@@ -36,14 +36,14 @@ func (pr *Printer) renderGrid(headers []string, grid [][]string, indent int) {
 
 	pr.printGridLine(headers, widths, pad, prefix, nil)
 
-	fmt.Fprint(pr.w(), prefix)
+	_, _ = fmt.Fprint(pr.w(), prefix)
 	for i, w := range widths {
 		if i > 0 {
-			fmt.Fprint(pr.w(), pad)
+			_, _ = fmt.Fprint(pr.w(), pad)
 		}
-		fmt.Fprint(pr.w(), strings.Repeat("─", w))
+		_, _ = fmt.Fprint(pr.w(), strings.Repeat("─", w))
 	}
-	fmt.Fprintln(pr.w())
+	_, _ = fmt.Fprintln(pr.w())
 
 	wrapping := wrappingColumns(grid)
 	for _, row := range grid {
@@ -92,10 +92,10 @@ func (pr *Printer) printGridLine(cells []string, widths []int, pad, prefix strin
 	}
 
 	for line := 0; line < height; line++ {
-		fmt.Fprint(pr.w(), prefix)
+		_, _ = fmt.Fprint(pr.w(), prefix)
 		for i := range cells {
 			if i > 0 {
-				fmt.Fprint(pr.w(), pad)
+				_, _ = fmt.Fprint(pr.w(), pad)
 			}
 			var cell string
 			if line < len(segments[i]) {
@@ -104,9 +104,9 @@ func (pr *Printer) printGridLine(cells []string, widths []int, pad, prefix strin
 			if i < len(cells)-1 {
 				cell = padRight(cell, widths[i])
 			}
-			fmt.Fprint(pr.w(), cell)
+			_, _ = fmt.Fprint(pr.w(), cell)
 		}
-		fmt.Fprintln(pr.w())
+		_, _ = fmt.Fprintln(pr.w())
 	}
 }
 

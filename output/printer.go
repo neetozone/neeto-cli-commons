@@ -105,7 +105,7 @@ func (pr *Printer) Print(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	}
 
 	if pr.Quiet {
-		fmt.Fprintln(pr.w(), string(data))
+		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
 
@@ -125,7 +125,7 @@ func (pr *Printer) PrintWithPagination(data, pagination json.RawMessage, breadcr
 	}
 
 	if pr.Quiet {
-		fmt.Fprintln(pr.w(), string(data))
+		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
 
@@ -148,7 +148,7 @@ func (pr *Printer) PrintTable(data json.RawMessage, headers []string, rows [][]i
 	}
 
 	if pr.Quiet {
-		fmt.Fprintln(pr.w(), string(data))
+		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
 
@@ -163,22 +163,22 @@ func (pr *Printer) PrintTable(data json.RawMessage, headers []string, rows [][]i
 
 func (pr *Printer) PrintMessage(msg string) {
 	if pr.Quiet {
-		fmt.Fprintln(pr.w(), "success")
+		_, _ = fmt.Fprintln(pr.w(), "success")
 		return
 	}
 
 	if pr.Toon {
-		fmt.Fprintln(pr.w(), msg)
+		_, _ = fmt.Fprintln(pr.w(), msg)
 		return
 	}
 
 	if pr.UseJSON() {
 		data, _ := json.Marshal(map[string]string{"message": msg})
-		fmt.Fprintln(pr.w(), string(data))
+		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
 
-	fmt.Fprintln(pr.w(), msg)
+	_, _ = fmt.Fprintln(pr.w(), msg)
 }
 
 // PrintQuiet prints only the identifier in quiet mode, so create and update
@@ -187,7 +187,7 @@ func (pr *Printer) PrintMessage(msg string) {
 func (pr *Printer) PrintQuiet(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	if pr.Quiet {
 		if id := extractIdentifier(data); id != "" {
-			fmt.Fprintln(pr.w(), id)
+			_, _ = fmt.Fprintln(pr.w(), id)
 			return
 		}
 	}
@@ -227,14 +227,14 @@ func extractIdentifier(data json.RawMessage) string {
 func (pr *Printer) printEnvelope(data json.RawMessage, breadcrumbs []Breadcrumb, pagination json.RawMessage) {
 	envelope := Envelope{Data: data, Breadcrumbs: breadcrumbs, Pagination: pagination}
 	out, _ := json.MarshalIndent(envelope, "", "  ")
-	fmt.Fprintln(pr.w(), string(out))
+	_, _ = fmt.Fprintln(pr.w(), string(out))
 }
 
 func (pr *Printer) printPretty(data json.RawMessage) {
 	var rows []map[string]interface{}
 	if err := json.Unmarshal(data, &rows); err == nil {
 		if len(rows) == 0 {
-			fmt.Fprintln(pr.w(), "No records found.")
+			_, _ = fmt.Fprintln(pr.w(), "No records found.")
 			return
 		}
 		if pr.tableUninformative(rows) {
@@ -258,16 +258,16 @@ func (pr *Printer) printPretty(data json.RawMessage) {
 		return
 	}
 
-	fmt.Fprintln(pr.w(), string(data))
+	_, _ = fmt.Fprintln(pr.w(), string(data))
 }
 
 func (pr *Printer) printToon(data, pagination json.RawMessage) {
 	out, err := encodeToon(data, pagination)
 	if err != nil {
-		fmt.Fprintln(pr.w(), string(data))
+		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
-	fmt.Fprintln(pr.w(), out)
+	_, _ = fmt.Fprintln(pr.w(), out)
 }
 
 func encodeToon(data, pagination json.RawMessage) (string, error) {
@@ -309,7 +309,7 @@ func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
 	page := firstNonZero(p.CurrentPageNumber, p.CurrentPage, p.Page)
 	total := firstNonZero(p.TotalRecords, p.TotalCount)
 
-	fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, p.TotalPages, total)
+	_, _ = fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, p.TotalPages, total)
 }
 
 func firstNonZero(values ...int) int {
@@ -326,8 +326,8 @@ func (pr *Printer) printBreadcrumbs(breadcrumbs []Breadcrumb) {
 		return
 	}
 
-	fmt.Fprintln(pr.w())
+	_, _ = fmt.Fprintln(pr.w())
 	for _, b := range breadcrumbs {
-		fmt.Fprintf(pr.w(), "  %s: %s\n", b.Label, b.Command)
+		_, _ = fmt.Fprintf(pr.w(), "  %s: %s\n", b.Label, b.Command)
 	}
 }

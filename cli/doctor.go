@@ -94,7 +94,7 @@ func (a *App) connectionCheck(subdomain string) checkResult {
 
 func renderChecks(w io.Writer, checks []checkResult, tty bool) {
 	for _, check := range checks {
-		fmt.Fprintf(w, "%s %s: %s\n", checkGlyph(check, tty), check.Name, check.Detail)
+		_, _ = fmt.Fprintf(w, "%s %s: %s\n", checkGlyph(check, tty), check.Name, check.Detail)
 	}
 }
 

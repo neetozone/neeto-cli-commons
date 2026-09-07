@@ -35,7 +35,7 @@ func (a *App) newCommandsCatalogCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), string(out))
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(out))
 			return nil
 		},
 	}

@@ -203,10 +203,10 @@ func (a *App) installCompletion(shell string, w io.Writer) error {
 		if err := writeCompletionScript(a.root, shell, script); err != nil {
 			return err
 		}
-		fmt.Fprintf(w, "Installed %s completion:\n", shell)
-		fmt.Fprintf(w, "  script: %s (overwritten)\n", script)
-		fmt.Fprintln(w, "fish loads it automatically. Start a new shell to use it.")
-		fmt.Fprintf(w, "Re-run \"%s completion %s\" after upgrading to keep completions current with the latest commands.\n", name, shell)
+		_, _ = fmt.Fprintf(w, "Installed %s completion:\n", shell)
+		_, _ = fmt.Fprintf(w, "  script: %s (overwritten)\n", script)
+		_, _ = fmt.Fprintln(w, "fish loads it automatically. Start a new shell to use it.")
+		_, _ = fmt.Fprintf(w, "Re-run \"%s completion %s\" after upgrading to keep completions current with the latest commands.\n", name, shell)
 		return nil
 
 	case "powershell":
@@ -228,14 +228,14 @@ func (a *App) installCompletion(shell string, w io.Writer) error {
 }
 
 func reportInstall(w io.Writer, name, shell, script, rc string, refreshed bool) error {
-	fmt.Fprintf(w, "Installed %s completion:\n", shell)
-	fmt.Fprintf(w, "  script: %s (overwritten)\n", script)
+	_, _ = fmt.Fprintf(w, "Installed %s completion:\n", shell)
+	_, _ = fmt.Fprintf(w, "  script: %s (overwritten)\n", script)
 	if refreshed {
-		fmt.Fprintf(w, "  loader: refreshed in %s\n", rc)
+		_, _ = fmt.Fprintf(w, "  loader: refreshed in %s\n", rc)
 	} else {
-		fmt.Fprintf(w, "  loader: added to %s\n", rc)
+		_, _ = fmt.Fprintf(w, "  loader: added to %s\n", rc)
 	}
-	fmt.Fprintf(w, "Start a new shell (or run: source %s) to use it.\n", rc)
-	fmt.Fprintf(w, "Re-run \"%s completion %s\" after upgrading to keep completions current with the latest commands.\n", name, shell)
+	_, _ = fmt.Fprintf(w, "Start a new shell (or run: source %s) to use it.\n", rc)
+	_, _ = fmt.Fprintf(w, "Re-run \"%s completion %s\" after upgrading to keep completions current with the latest commands.\n", name, shell)
 	return nil
 }

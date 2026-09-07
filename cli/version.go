@@ -19,10 +19,10 @@ func (a *App) newVersionCommand() *cobra.Command {
 					"commit":  a.Build.Commit,
 					"date":    a.Build.Date,
 				})
-				fmt.Fprintln(cmd.OutOrStdout(), string(payload))
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(payload))
 				return
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), a.versionLine())
+			_, _ = fmt.Fprintln(cmd.OutOrStdout(), a.versionLine())
 		},
 	}
 }
