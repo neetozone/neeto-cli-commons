@@ -10,6 +10,7 @@ import (
 
 	"github.com/neetozone/neeto-cli-commons/config"
 	"github.com/neetozone/neeto-cli-commons/render"
+	"gopkg.in/yaml.v3"
 )
 
 func product(t *testing.T, extra string) config.Product {
@@ -379,5 +380,25 @@ func TestAllDerivesPluginURLsFromTheModulePath(t *testing.T) {
 	}
 	if strings.Contains(manifest, "neetokb-cli") {
 		t.Errorf("plugin.json still carries the broken repo name:\n%s", manifest)
+	}
+}
+
+func TestNeetoCIPipelinesParseEveryCommandAsAString(t *testing.T) {
+	p := product(t, "api_base_path: /api/external/v2\n")
+	for _, name := range []string{"neetoci/release.yml", "neetoci/verify.yml"} {
+		var pipeline struct {
+			Commands []any `yaml:"commands"`
+		}
+		if err := yaml.Unmarshal([]byte(render1(t, p, name)), &pipeline); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if len(pipeline.Commands) == 0 {
+			t.Fatalf("%s: no commands", name)
+		}
+		for i, command := range pipeline.Commands {
+			if _, ok := command.(string); !ok {
+				t.Errorf("%s: command %d parsed as %T, not a string; an unquoted \": \" turns the line into a mapping and NeetoCI rejects the pipeline: %v", name, i, command, command)
+			}
+		}
 	}
 }
