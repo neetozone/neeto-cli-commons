@@ -1,0 +1,18 @@
+version: v1.0
+
+fail_fast: true
+
+plan: pro
+
+machine_type: multi
+
+commands:
+  - checkout
+  - neetoci-version go {{goMinor .GoVersion}}
+  - curl -fsSL {{commonsRawBase .}}/assets/release.sh -o /tmp/neeto-cli-release.sh
+  - echo "{{releaseScriptSHA}}  /tmp/neeto-cli-release.sh" | sha256sum -c -
+  - bash /tmp/neeto-cli-release.sh
+
+triggers:
+  - event: branch
+    branch_name: main
