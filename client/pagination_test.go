@@ -6,21 +6,21 @@ import (
 	"testing"
 )
 
-func TestAddPaginationParams_SendsPageNumberOnly(t *testing.T) {
+func TestAddPaginationParams_SendsBothPageSpellings(t *testing.T) {
 	params := url.Values{}
 	AddPaginationParams(params, 3, 25)
 
 	if got := params.Get("page_number"); got != "3" {
 		t.Errorf("page_number = %q, want 3", got)
 	}
+	if got := params.Get("page"); got != "3" {
+		t.Errorf("page = %q, want 3; endpoints that read only 'page' silently return the first page without it", got)
+	}
 	if got := params.Get("page_size"); got != "25" {
 		t.Errorf("page_size = %q, want 25", got)
 	}
-	if _, ok := params["page"]; ok {
-		t.Errorf("legacy 'page' param sent: %v", params)
-	}
-	if len(params) != 2 {
-		t.Errorf("params = %v, want exactly page_number and page_size", params)
+	if len(params) != 3 {
+		t.Errorf("params = %v, want page, page_number and page_size", params)
 	}
 }
 
@@ -31,11 +31,11 @@ func TestAddPaginationParams_PageOnly(t *testing.T) {
 	if got := params.Get("page_number"); got != "2" {
 		t.Errorf("page_number = %q, want 2", got)
 	}
+	if got := params.Get("page"); got != "2" {
+		t.Errorf("page = %q, want 2", got)
+	}
 	if got := params.Get("page_size"); got != "" {
 		t.Errorf("page_size = %q, want empty", got)
-	}
-	if _, ok := params["page"]; ok {
-		t.Errorf("legacy 'page' param sent: %v", params)
 	}
 }
 

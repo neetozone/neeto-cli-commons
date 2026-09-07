@@ -32,8 +32,12 @@ func (p *Pagination) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// AddPaginationParams sends both spellings of the page key. Product-native
+// endpoints read "page"; commons-backed ones read "page_number". Sending only
+// one makes --page silently return the first page on half the endpoints.
 func AddPaginationParams(params url.Values, page, pageSize int) {
 	if page > 0 {
+		params.Set("page", strconv.Itoa(page))
 		params.Set("page_number", strconv.Itoa(page))
 	}
 	if pageSize > 0 {
