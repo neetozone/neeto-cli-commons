@@ -23,7 +23,9 @@ commands:
   - export GOPRIVATE=github.com/neetozone/*
   - export GH_TOKEN="${GITHUB_TOKEN}"
   - test -n "${GITHUB_TOKEN}" || (echo "GITHUB_TOKEN is not set; neeto-cli-commons is private and this job cannot fetch it, push, or publish without one." >&2; exit 1)
-  - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+  - export GIT_CONFIG_COUNT=1
+  - export GIT_CONFIG_KEY_0=url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf
+  - export GIT_CONFIG_VALUE_0=https://github.com/
   - go mod download
   - gofmt -l . | tee /tmp/fmt_output && test ! -s /tmp/fmt_output
   - go vet ./...

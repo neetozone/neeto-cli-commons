@@ -30,7 +30,9 @@ commands:
   - checkout
   - neetoci-version go {{goMinor .GoVersion}}
   - export GOPRIVATE=github.com/neetozone/*
-  - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+  - export GIT_CONFIG_COUNT=1
+  - export GIT_CONFIG_KEY_0=url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf
+  - export GIT_CONFIG_VALUE_0=https://github.com/
   - go mod download
   - go run github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync --check
   - gofmt -l . | tee /tmp/fmt_output && test ! -s /tmp/fmt_output
