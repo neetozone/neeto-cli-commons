@@ -1,5 +1,3 @@
-// Command neeto-cli-sync writes the files neeto-cli-commons owns into a
-// product repository, or verifies that what is on disk already matches.
 package main
 
 import (

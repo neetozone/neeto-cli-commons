@@ -59,8 +59,6 @@ func (a *Auth) BaseURL(subdomain string) string {
 	return strings.TrimRight(a.product.APIHost, "/")
 }
 
-// LoginURL points at the page the user opens in a browser. Under single_host
-// tenancy that page is served by the dashboard host, not by the API host.
 func (a *Auth) LoginURL(subdomain, loginToken string) string {
 	token := url.QueryEscape(loginToken)
 	if a.RequiresSubdomain() {
@@ -190,6 +188,10 @@ func (a *Auth) checkStatus(baseURL, loginToken string) (status, email, sessionTo
 	}
 	defer func() { _ = resp.Body.Close() }()
 
+	if resp.StatusCode >= 400 {
+		return "", "", "", fmt.Errorf("status check returned HTTP %d", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", "", err
@@ -206,9 +208,6 @@ func (a *Auth) checkStatus(baseURL, loginToken string) (status, email, sessionTo
 	return result.Status, result.Email, result.SessionToken, nil
 }
 
-// postJSON issues a POST that both sends and accepts JSON. The Accept header is
-// the important part: Go's http.Post only sets Content-Type, so without it Rails
-// content-negotiates to HTML and the login endpoints return 500.
 func (a *Auth) postJSON(rawURL string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodPost, rawURL, body)
 	if err != nil {

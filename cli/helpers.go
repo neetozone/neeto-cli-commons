@@ -19,8 +19,6 @@ const (
 	maxPageSizeAnnotation = "neeto_max_page_size"
 )
 
-// Client resolves credentials for the command's --subdomain (when the product
-// has subdomains) and returns a configured API client.
 func (a *App) Client(cmd *cobra.Command) (*client.Client, error) {
 	subdomain := ""
 	if a.Auth.RequiresSubdomain() {
@@ -33,8 +31,6 @@ func (a *App) Client(cmd *cobra.Command) (*client.Client, error) {
 	return client.New(a.Product, creds, a.Build.Version), nil
 }
 
-// PrintList renders a collection response. resourceKey names the array inside
-// the body; when the body carries a pagination block it is rendered too.
 func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []output.Breadcrumb) {
 	var parsed map[string]json.RawMessage
 	if err := json.Unmarshal(data, &parsed); err != nil {
@@ -58,10 +54,6 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 	}
 }
 
-// inlinePagination rebuilds a pagination block from a body that carries the
-// counters at the top level instead of nested, which is how NeetoDeploy and
-// NeetoInvoice answer. The rebuilt block uses the canonical key names, so the
-// JSON envelope reads the same whichever shape the API sent.
 func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
 	totalPages := output.IntFrom(parsed, "total_pages")
 	if totalPages == 0 {
@@ -117,9 +109,6 @@ func (a *App) PaginationParams(cmd *cobra.Command) url.Values {
 	return params
 }
 
-// AddPaginationFlags registers --page and --page-size on each command. maxPageSize
-// of 0 means the product-wide default of 100; NeetoPlaydash caps some endpoints
-// lower and the help text must say so.
 func AddPaginationFlags(maxPageSize int, cmds ...*cobra.Command) {
 	if maxPageSize <= 0 {
 		maxPageSize = defaultMaxPageSize
@@ -134,7 +123,6 @@ func AddPaginationFlags(maxPageSize int, cmds ...*cobra.Command) {
 	}
 }
 
-// maxPageSize reports the cap AddPaginationFlags advertised for this command.
 func maxPageSize(cmd *cobra.Command) int {
 	if cmd == nil {
 		return defaultMaxPageSize
@@ -146,9 +134,6 @@ func maxPageSize(cmd *cobra.Command) int {
 	return n
 }
 
-// MarkFlagsRequired marks flags required. The "(required)" hint is added at help
-// render time rather than by mutating flag.Usage, so it never leaks into the
-// `commands` catalog that the docs sites generate from.
 func MarkFlagsRequired(cmd *cobra.Command, names ...string) {
 	for _, name := range names {
 		_ = cmd.MarkFlagRequired(name)
@@ -163,8 +148,6 @@ func isRequired(flag *pflag.Flag) bool {
 	return ok && len(values) > 0 && values[0] == "true"
 }
 
-// AllowJSONFileToSatisfyRequiredFlags lets --json-file stand in for flags that
-// would otherwise be required, when the file supplies those keys.
 func AllowJSONFileToSatisfyRequiredFlags(cmd *cobra.Command) {
 	previous := cmd.PreRunE
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
@@ -192,9 +175,6 @@ func AllowJSONFileToSatisfyRequiredFlags(cmd *cobra.Command) {
 	}
 }
 
-// unwrapSingleObject returns the inner object of a payload written as a single
-// wrapping key, such as NeetoAuth's {"user": {...}}. Anything else yields nil,
-// so an outer key always takes precedence over an inner one.
 func unwrapSingleObject(data map[string]any) map[string]any {
 	if len(data) != 1 {
 		return nil

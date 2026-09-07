@@ -88,7 +88,6 @@ func resolveTarget(opts Options, v *vars.Variables) (string, error) {
 	info, err := os.Stat(abs)
 	switch {
 	case os.IsNotExist(err):
-		// Will be created below.
 	case err != nil:
 		return "", err
 	case !info.IsDir():
@@ -119,7 +118,6 @@ func writeTree(target string, v *vars.Variables) error {
 		}
 		rel := strings.TrimPrefix(p, "_template/")
 
-		// The exec manifest is a generator-side artifact; do not copy.
 		if rel == ".exec-manifest" {
 			return nil
 		}

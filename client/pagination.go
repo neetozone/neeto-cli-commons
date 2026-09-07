@@ -13,9 +13,6 @@ type Pagination struct {
 	PageSize          int `json:"page_size"`
 }
 
-// UnmarshalJSON accepts both spellings of the current-page key. NeetoDeploy
-// returns "current_page" where every other product returns
-// "current_page_number".
 func (p *Pagination) UnmarshalJSON(data []byte) error {
 	type alias Pagination
 	var raw struct {
@@ -32,9 +29,6 @@ func (p *Pagination) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// AddPaginationParams sends both spellings of the page key. Product-native
-// endpoints read "page"; commons-backed ones read "page_number". Sending only
-// one makes --page silently return the first page on half the endpoints.
 func AddPaginationParams(params url.Values, page, pageSize int) {
 	if page > 0 {
 		params.Set("page", strconv.Itoa(page))

@@ -158,8 +158,6 @@ func (a *App) newWhoamiCommand() *cobra.Command {
 	}
 }
 
-// hostFor returns the host a subdomain's requests go to, so messages name the
-// workspace the user is actually talking to rather than the canonical domain.
 func (a *App) hostFor(subdomain string) string {
 	baseURL := a.Auth.BaseURL(subdomain)
 	if u, err := url.Parse(baseURL); err == nil && u.Host != "" {

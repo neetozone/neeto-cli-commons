@@ -31,8 +31,6 @@ func isScalar(v interface{}) bool {
 	return false
 }
 
-// isDisplayable reports whether a value fits in a single table cell: scalars,
-// and slices of scalars, which render as a comma-joined list.
 func isDisplayable(v interface{}) bool {
 	if isScalar(v) {
 		return true
@@ -103,7 +101,6 @@ func previewScalar(v interface{}) string {
 	return truncate(strings.TrimSpace(strings.ReplaceAll(formatValue(v), "\n", " ")), maxPreviewLen)
 }
 
-// inlineValue renders a value on the same line as its label.
 func inlineValue(v interface{}) string {
 	switch val := v.(type) {
 	case map[string]interface{}:

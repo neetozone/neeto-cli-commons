@@ -1,5 +1,3 @@
-// Package assets carries the product-agnostic files every neeto CLI repo
-// ships: installers, CI pipelines, build config and the shared release script.
 package assets
 
 import "embed"

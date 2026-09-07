@@ -12,7 +12,6 @@ import (
 
 const (
 	sessionStartHookPath = "hooks/session-start.sh"
-	pluginLicense        = "MIT"
 )
 
 const sessionStartScriptTemplate = `#!/bin/sh
@@ -53,7 +52,7 @@ type manifest struct {
 	Author      owner  `json:"author"`
 	Homepage    string `json:"homepage"`
 	Repository  string `json:"repository"`
-	License     string `json:"license"`
+	License     string `json:"license,omitempty"`
 }
 
 type marketplaceEntry struct {
@@ -86,9 +85,6 @@ type hooksManifest struct {
 	Hooks hookEvents `json:"hooks"`
 }
 
-// File is one artefact of the plugin tree. Extract writes these, and the asset
-// renderer writes the same bytes into the product repo, so the two copies
-// cannot drift.
 type File struct {
 	Path string
 	Mode os.FileMode
@@ -104,7 +100,6 @@ func New(p config.Product) *Plugin {
 	return &Plugin{product: p, skillMD: p.SkillMD}
 }
 
-// SkillBody returns the SKILL.md content with YAML frontmatter stripped.
 func SkillBody(skillMD []byte) string {
 	content := string(skillMD)
 	if strings.HasPrefix(content, "---") {
@@ -115,17 +110,6 @@ func SkillBody(skillMD []byte) string {
 	return content
 }
 
-// ExtractClaudePlugin writes a Claude Code plugin (and a single-plugin
-// marketplace pointing at it) to dest. The layout follows
-// https://code.claude.com/docs/en/plugins-reference:
-//
-//	dest/
-//	├── .claude-plugin/
-//	│   ├── plugin.json
-//	│   └── marketplace.json
-//	├── skills/<name>/SKILL.md
-//	├── commands/<cmd>.md
-//	└── hooks/{hooks.json,*.sh}
 func ExtractClaudePlugin(p config.Product, skillMD []byte, dest string) error {
 	pl := New(p)
 	if len(skillMD) > 0 {
@@ -134,11 +118,8 @@ func ExtractClaudePlugin(p config.Product, skillMD []byte, dest string) error {
 	return pl.Extract(dest)
 }
 
-// Name matches `.claude-plugin/plugin.json#name` and the entry under
-// `marketplace.json#plugins[].name`.
 func (pl *Plugin) Name() string { return pl.product.BinaryName }
 
-// MarketplaceName matches `.claude-plugin/marketplace.json#name`.
 func (pl *Plugin) MarketplaceName() string { return pl.product.BinaryName }
 
 func (pl *Plugin) SkillBody() string { return SkillBody(pl.skillMD) }
@@ -156,7 +137,7 @@ func (pl *Plugin) PluginJSON() ([]byte, error) {
 		Author:      pl.owner(),
 		Homepage:    pl.repositoryURL(),
 		Repository:  pl.repositoryURL(),
-		License:     pluginLicense,
+		License:     pl.product.License,
 	})
 }
 
@@ -258,8 +239,6 @@ func (pl *Plugin) substitute(body string) string {
 	).Replace(body)
 }
 
-// marshal terminates every manifest with a newline so the bytes written into a
-// product repo are byte-identical to the checked-in files.
 func marshal(v any) ([]byte, error) {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {

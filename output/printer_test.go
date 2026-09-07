@@ -15,8 +15,6 @@ func newTestPrinter() (*Printer, *bytes.Buffer) {
 	return &Printer{PriorityFields: config.DefaultPriorityFields(), Out: &buf, Err: &buf}, &buf
 }
 
-// newPrettyPrinter pretends the buffer is a terminal so the human-facing
-// branches of Print, PrintWithPagination and PrintTable are reachable.
 func newPrettyPrinter() (*Printer, *bytes.Buffer) {
 	pr, buf := newTestPrinter()
 	tty := true

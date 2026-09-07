@@ -16,8 +16,6 @@ type Credentials struct {
 	SessionToken string `json:"session_token"`
 }
 
-// Store is the persisted collection of all logged-in subdomains. Under
-// single_host tenancy it holds exactly one entry with an empty Subdomain.
 type Store struct {
 	Credentials []Credentials `json:"credentials"`
 }
@@ -59,7 +57,6 @@ func (s *Store) Subdomains() []string {
 	return out
 }
 
-// ConfigDir returns the directory holding all persisted CLI state.
 func (a *Auth) ConfigDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -76,10 +73,6 @@ func (a *Auth) AuthFilePath() (string, error) {
 	return filepath.Join(dir, authFile), nil
 }
 
-// LoadStore reads the saved sessions, returning an empty store when the user is
-// not logged in. It transparently migrates the older on-disk shapes: the flat
-// single-credential object that the subdomain CLIs wrote before multi-login, and
-// the multi-credential store that NeetoDeploy wrote before it dropped subdomains.
 func (a *Auth) LoadStore() (*Store, error) {
 	path, err := a.AuthFilePath()
 	if err != nil {
@@ -115,9 +108,6 @@ func (a *Auth) LoadStore() (*Store, error) {
 	return &Store{Credentials: []Credentials{legacy}}, nil
 }
 
-// SaveStore writes the credentials, removing the file when there are none.
-// Subdomain products write the multi-credential store; single_host products
-// write the flat single-object shape the NeetoDeploy CLI has always used.
 func (a *Auth) SaveStore(store *Store) error {
 	path, err := a.AuthFilePath()
 	if err != nil {

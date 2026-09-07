@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// catalogFlag and catalogEntry are a published contract: the docs sites run
-// `<binary> commands` and generate their command reference from this shape.
 type catalogFlag struct {
 	Name        string `json:"name"`
 	Shorthand   string `json:"shorthand,omitempty"`

@@ -42,7 +42,6 @@ func (a *App) newDoctorCommand() *cobra.Command {
 	}
 }
 
-// runChecks runs every check independently — one failure does not skip the next.
 func (a *App) runChecks(cmd *cobra.Command) []checkResult {
 	subdomain := ""
 	if a.Auth.RequiresSubdomain() {

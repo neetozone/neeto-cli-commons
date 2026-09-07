@@ -10,8 +10,6 @@ import (
 
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-// Spinner renders an animated progress indicator with elapsed time on a TTY,
-// degrading to plain line-by-line output when stderr is not a terminal.
 type Spinner struct {
 	msg         string
 	out         io.Writer
@@ -23,12 +21,10 @@ type Spinner struct {
 	started time.Time
 }
 
-// NewSpinner writes to stderr so command output on stdout stays clean.
 func NewSpinner(msg string) *Spinner {
 	return newSpinner(msg, os.Stderr, isTerminal(os.Stderr))
 }
 
-// Spinner writes to the printer's error stream, so a test can capture it.
 func (pr *Printer) Spinner(msg string) *Spinner {
 	return newSpinner(msg, pr.errw(), isTerminal(pr.errw()))
 }
@@ -67,7 +63,6 @@ func (s *Spinner) Start() {
 	}()
 }
 
-// UpdateMessage swaps the spinner text while it keeps spinning.
 func (s *Spinner) UpdateMessage(msg string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -80,14 +75,10 @@ func (s *Spinner) UpdateMessage(msg string) {
 	}
 }
 
-// Succeed stops the spinner and prints a final ✓ line.
 func (s *Spinner) Succeed(msg string) { s.finish("✓", msg) }
 
-// Fail stops the spinner and prints a final ✗ line.
 func (s *Spinner) Fail(msg string) { s.finish("✗", msg) }
 
-// Stop clears the spinner without printing a final line. Safe to call from
-// any goroutine and after another finisher (no-op then).
 func (s *Spinner) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

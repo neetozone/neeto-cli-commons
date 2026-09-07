@@ -14,8 +14,6 @@ type field struct {
 	value interface{}
 }
 
-// decodeFields walks a JSON object once, keeping the key order the API sent so
-// the rendered fields match the payload rather than Go's map iteration.
 func decodeFields(data json.RawMessage) ([]field, bool) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	t, err := dec.Token()
@@ -91,8 +89,6 @@ func (pr *Printer) renderFields(fields []field, depth int) {
 	}
 }
 
-// expands reports whether a value gets its own indented block. Nesting stops at
-// maxRenderDepth so a deeply linked payload cannot walk off the screen.
 func expands(v interface{}, depth int) bool {
 	if depth >= maxRenderDepth {
 		return false
@@ -128,8 +124,6 @@ func (pr *Printer) printArray(data json.RawMessage, depth int) {
 	pr.printIndentedJSON(data, depth)
 }
 
-// printLabelValues renders [{label, value}, ...] the way a form submission
-// reads, using each entry's own label instead of a numbered table.
 func (pr *Printer) printLabelValues(items []interface{}, depth int) {
 	prefix := indentPrefix(depth)
 
@@ -193,8 +187,6 @@ func (pr *Printer) printRecordBlocks(raws []json.RawMessage, rows []map[string]i
 	}
 }
 
-// orderBlockFields leads with the columns a table would have shown, then the
-// remaining inline fields, then the nested ones.
 func (pr *Printer) orderBlockFields(fields []field, row map[string]interface{}) []field {
 	index := make(map[string]field, len(fields))
 	for _, f := range fields {

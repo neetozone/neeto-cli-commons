@@ -132,9 +132,6 @@ func (pr *Printer) pickColumns(rows []map[string]interface{}) []string {
 		if !isDisplayable(v) {
 			continue
 		}
-		// A slice-valued field earns a column only when some row actually has
-		// values in it. Judging by row 0 alone either drops a column that is
-		// merely empty at the top, or keeps one that is empty everywhere.
 		if _, isSlice := v.([]interface{}); isSlice && !anyNonEmptySlice(rows, k) {
 			continue
 		}
@@ -173,8 +170,6 @@ func (pr *Printer) pickColumns(rows []map[string]interface{}) []string {
 	return append(cols, urlCols...)
 }
 
-// orderedKeys puts the product's priority fields first, in the order the
-// product declared them, then everything else alphabetically.
 func (pr *Printer) orderedKeys(keys []string) []string {
 	remaining := make(map[string]bool, len(keys))
 	for _, k := range keys {
@@ -200,9 +195,6 @@ func (pr *Printer) orderedKeys(keys []string) []string {
 	return append(ordered, rest...)
 }
 
-// tableUninformative reports whether a table would hide more than it shows:
-// too few columns survived the scalar filter and at least one record carries
-// nested data that a table cannot render.
 func (pr *Printer) tableUninformative(rows []map[string]interface{}) bool {
 	if len(pr.pickColumns(rows)) > 2 {
 		return false

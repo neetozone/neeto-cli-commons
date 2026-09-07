@@ -25,12 +25,8 @@ type Client struct {
 	ProductName string
 	BinaryName  string
 
-	// V2BasePath enables GetV2 for products that serve a second API version
-	// alongside APIBasePath. Empty for every product but NeetoDeploy.
 	V2BasePath string
 
-	// SuggestionFor overrides the built-in per-status suggestion. Returning an
-	// empty string falls back to the built-in text.
 	SuggestionFor func(status int, message string) string
 }
 
@@ -59,7 +55,6 @@ func (c *Client) Get(path string, params url.Values) (json.RawMessage, error) {
 	return c.get(c.BaseURL, path, params)
 }
 
-// GetV2 issues a GET against V2BasePath instead of the primary base path.
 func (c *Client) GetV2(path string, params url.Values) (json.RawMessage, error) {
 	if c.V2BasePath == "" {
 		return nil, fmt.Errorf("client: V2BasePath is not configured")
@@ -88,8 +83,6 @@ func (c *Client) Delete(path string) error {
 	return err
 }
 
-// DeleteWithBody is DELETE with a JSON body, which NeetoDeploy expects on env
-// unset and on console-session cleanup.
 func (c *Client) DeleteWithBody(path string, body any) (json.RawMessage, error) {
 	return c.doWithBody(http.MethodDelete, path, body)
 }

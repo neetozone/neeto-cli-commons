@@ -18,8 +18,6 @@ type BuildInfo struct {
 	Date    string
 }
 
-// App owns the root command and every generic command. Products add their
-// domain commands to Root() and call Execute.
 type App struct {
 	Product config.Product
 	Printer *output.Printer
@@ -27,18 +25,10 @@ type App struct {
 	Plugin  *plugin.Plugin
 	Build   BuildInfo
 
-	// PreRun runs before every command. NeetoDeploy uses it to gate on a
-	// Teleport session.
 	PreRun func(cmd *cobra.Command, args []string) error
 
-	// FormatError renders an error for the user. NeetoDeploy uses it to turn
-	// cobra's raw "required flag not set" into a multi-section message with
-	// discovery hints. Returning "" falls back to the default rendering.
 	FormatError func(cmd *cobra.Command, err error) string
 
-	// ExitStatus maps an error to a process exit code and whether to print it.
-	// NeetoDeploy uses it to propagate tsh's own exit code without repeating
-	// the message tsh already printed.
 	ExitStatus func(err error) (code int, report bool)
 
 	root *cobra.Command
@@ -68,8 +58,6 @@ func (a *App) SetBuildInfo(version, commit, date string) {
 		a.Build.Date = date
 	}
 	a.root.Version = a.Build.Version
-	// cobra renders the version template at --version time from a string fixed
-	// when it was set, so it has to be re-set once the real build info lands.
 	a.root.SetVersionTemplate(fmt.Sprintf("%s %s (commit: %s, built: %s)\n",
 		a.Product.BinaryName, a.Build.Version, a.Build.Commit, a.Build.Date))
 }

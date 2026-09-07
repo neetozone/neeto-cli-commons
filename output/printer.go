@@ -23,8 +23,6 @@ type Envelope struct {
 	Pagination  json.RawMessage `json:"pagination,omitempty"`
 }
 
-// Printer renders API payloads. Every product shares it; the only per-product
-// input is PriorityFields, which decides column order.
 type Printer struct {
 	ForceJSON bool
 	Quiet     bool
@@ -139,8 +137,6 @@ func (pr *Printer) PrintWithPagination(data, pagination json.RawMessage, breadcr
 	pr.printBreadcrumbs(breadcrumbs)
 }
 
-// PrintTable renders columns the caller chose, for payloads whose useful shape
-// is not a list of uniform records (reports, summaries).
 func (pr *Printer) PrintTable(data json.RawMessage, headers []string, rows [][]interface{}, breadcrumbs []Breadcrumb) {
 	if pr.Toon {
 		pr.printToon(data, nil)
@@ -181,9 +177,6 @@ func (pr *Printer) PrintMessage(msg string) {
 	_, _ = fmt.Fprintln(pr.w(), msg)
 }
 
-// PrintQuiet prints only the identifier in quiet mode, so create and update
-// commands can be piped into the next command. Other modes fall through to
-// Print.
 func (pr *Printer) PrintQuiet(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	if pr.Quiet {
 		if id := extractIdentifier(data); id != "" {
@@ -195,8 +188,6 @@ func (pr *Printer) PrintQuiet(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	pr.Print(data, breadcrumbs)
 }
 
-// extractIdentifier pulls the most useful short identifier from a response,
-// unwrapping single-key wrappers like {"meeting": {...}} first.
 func extractIdentifier(data json.RawMessage) string {
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -306,10 +297,6 @@ func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
 	fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, totalPages, total)
 }
 
-// IntFrom returns the first of keys that is present in parsed, decoded through
-// float64 so a whole number written as 12.0 still reads as 12. A key that is
-// present and zero wins over a later key, so an empty page is not mistaken for
-// a missing count.
 func IntFrom(parsed map[string]json.RawMessage, keys ...string) int {
 	for _, key := range keys {
 		raw, ok := parsed[key]

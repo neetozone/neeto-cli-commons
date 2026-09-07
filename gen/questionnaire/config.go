@@ -8,9 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LoadConfig reads a YAML answers file, applies any missing defaults from
-// PrettyName/BinaryName/etc, and validates the result. Callers get a fully
-// populated Variables ready for generation.
 func LoadConfig(path, templateVersion string) (*vars.Variables, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

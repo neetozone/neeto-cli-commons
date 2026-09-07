@@ -45,8 +45,7 @@ func TestExtractRoundTrip(t *testing.T) {
     "email": "support@bigbinary.com"
   },
   "homepage": "https://github.com/neetozone/neeto-desk-cli",
-  "repository": "https://github.com/neetozone/neeto-desk-cli",
-  "license": "MIT"
+  "repository": "https://github.com/neetozone/neeto-desk-cli"
 }
 `
 	wantMarketplaceJSON := `{
@@ -242,8 +241,8 @@ func TestPluginJSONURLsFollowModulePath(t *testing.T) {
 	if got.Name != "neetokb" {
 		t.Errorf("name = %q, want neetokb", got.Name)
 	}
-	if got.License != "MIT" {
-		t.Errorf("license = %q, want MIT", got.License)
+	if got.License != "" {
+		t.Errorf("license = %q, want it omitted until a product declares one", got.License)
 	}
 	if strings.Contains(string(data), "neetokb-cli") {
 		t.Errorf("plugin.json still carries the broken neetokb-cli repo name:\n%s", data)

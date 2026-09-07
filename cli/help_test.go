@@ -20,8 +20,6 @@ func TestUsageTemplateSections(t *testing.T) {
 	}
 }
 
-// Cobra's default template ends with a "Use [command] --help" tip. Ours must
-// not: the help output already lists every command.
 func TestUsageOmitsTrailingTip(t *testing.T) {
 	a, _ := newTestApp(t, subdomainProduct())
 
@@ -30,9 +28,6 @@ func TestUsageOmitsTrailingTip(t *testing.T) {
 	}
 }
 
-// Subcommands have no template of their own — cobra walks up to the parent.
-// ALIASES renders only on a subcommand, so it is covered here rather than
-// against the root.
 func TestSubcommandInheritsUsageTemplate(t *testing.T) {
 	a, _ := newTestApp(t, subdomainProduct())
 	child := newTestSubcommand(t, a)
@@ -48,8 +43,6 @@ func TestSubcommandInheritsUsageTemplate(t *testing.T) {
 	}
 }
 
-// A subcommand lists its own flags and the root's in one FLAGS section, rather
-// than splitting the root's off under a second header.
 func TestSubcommandFlagsAreOneSection(t *testing.T) {
 	a, _ := newTestApp(t, subdomainProduct())
 	usage := newTestSubcommand(t, a).UsageString()
@@ -77,8 +70,6 @@ func TestRequiredMarkerIsAddedAtRenderTime(t *testing.T) {
 	}
 }
 
-// newTestSubcommand attaches a throwaway subcommand to the root for the length
-// of the test, so it inherits the root's persistent flags.
 func newTestSubcommand(t *testing.T, a *App) *cobra.Command {
 	t.Helper()
 	child := &cobra.Command{
@@ -93,8 +84,6 @@ func newTestSubcommand(t *testing.T, a *App) *cobra.Command {
 	return child
 }
 
-// Tests do not run against a terminal, so headers must come back unstyled —
-// the same path piped and redirected output takes.
 func TestBoldIsPlainWhenNotATerminal(t *testing.T) {
 	if got := bold("USAGE"); got != "USAGE" {
 		t.Errorf("bold(%q) = %q, want it unstyled off a terminal", "USAGE", got)

@@ -139,7 +139,6 @@ func TestGenerateAndBuild(t *testing.T) {
 		}
 	}
 
-	// commands subcommand emits a catalog.
 	cat, err := exec.Command(filepath.Join(out, "testapp"), "commands").CombinedOutput()
 	if err != nil {
 		t.Fatalf("commands failed: %v\n%s", err, cat)

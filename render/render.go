@@ -1,6 +1,3 @@
-// Package render turns a config.Product into the concrete repository files
-// every neeto CLI ships. It is the single source of truth for the installers,
-// the CI pipelines, the build config and the machine-generated README sections.
 package render
 
 import (
@@ -46,9 +43,6 @@ var repoFiles = []target{
 	{"docs/api-wrapper-reference.md", "docs/api-wrapper-reference.md"},
 }
 
-// All renders every file this package owns in a product repository, keyed by
-// its repository-relative path. README.md is not included: only the marked
-// sections inside it are generated, so it is merged through MergeREADME.
 func All(p config.Product) (map[string][]byte, error) {
 	out := make(map[string][]byte, len(repoFiles))
 	for _, t := range repoFiles {
@@ -59,9 +53,6 @@ func All(p config.Product) (map[string][]byte, error) {
 		out[t.dest] = data
 	}
 
-	// The Claude plugin manifests and hooks are owned by the plugin package so
-	// that the copies on disk and the ones `setup claude` emits come from one
-	// source. They were hand-maintained before, and had already drifted.
 	pl := plugin.New(p)
 	pluginJSON, err := pl.PluginJSON()
 	if err != nil {
@@ -83,9 +74,6 @@ func All(p config.Product) (map[string][]byte, error) {
 	return out, nil
 }
 
-// File renders one asset by name. Names are the asset's path under assets/
-// without the .tmpl suffix, for example "installers/install.sh",
-// "readme-sections/release" or "skill-frontmatter".
 func File(p config.Product, name string) ([]byte, error) {
 	if name == releaseScriptAsset {
 		return ReleaseScript(), nil
@@ -108,7 +96,6 @@ func File(p config.Product, name string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Names lists every asset File accepts, sorted.
 func Names() []string {
 	var names []string
 	err := fs.WalkDir(assets.FS, ".", func(p string, d fs.DirEntry, err error) error {
@@ -131,8 +118,6 @@ func Names() []string {
 	return names
 }
 
-// SectionNames lists the machine-generated README sections, in the order they
-// appear in a freshly generated README.
 func SectionNames() []string {
 	return []string{
 		"installation",
@@ -145,9 +130,6 @@ func SectionNames() []string {
 	}
 }
 
-// MergeREADME replaces every marked section of an existing README with the
-// freshly rendered one. Prose outside the markers, and sections whose markers
-// are absent, are left untouched.
 func MergeREADME(p config.Product, existing []byte) ([]byte, error) {
 	out := existing
 	for _, name := range SectionNames() {
@@ -175,8 +157,6 @@ func MergeREADME(p config.Product, existing []byte) ([]byte, error) {
 	return out, nil
 }
 
-// MissingSections reports the generated sections an existing README carries no
-// markers for, so a sync can tell the user what it left alone.
 func MissingSections(existing []byte) []string {
 	var missing []string
 	for _, name := range SectionNames() {
@@ -188,7 +168,6 @@ func MissingSections(existing []byte) []string {
 	return missing
 }
 
-// ReleaseScript is the product-agnostic release script every repo runs from CI.
 func ReleaseScript() []byte {
 	data, err := fs.ReadFile(assets.FS, releaseScriptAsset)
 	if err != nil {
@@ -197,14 +176,11 @@ func ReleaseScript() []byte {
 	return data
 }
 
-// ReleaseScriptSHA256 is the digest the CI shim checks the fetched script
-// against.
 func ReleaseScriptSHA256() string {
 	sum := sha256.Sum256(ReleaseScript())
 	return hex.EncodeToString(sum[:])
 }
 
-// IsExecutable reports whether a rendered file must land on disk as 0755.
 func IsExecutable(repoPath string) bool {
 	switch repoPath {
 	case "bin/setup", ".githooks/pre-commit":
@@ -213,8 +189,6 @@ func IsExecutable(repoPath string) bool {
 	return strings.HasSuffix(repoPath, ".sh")
 }
 
-// ShellEnv renders the product values the release script needs as POSIX shell
-// assignments, so no shell has to parse .neeto-cli.yml itself.
 func ShellEnv(p config.Product) string {
 	pairs := [][2]string{
 		{"BINARY_NAME", p.BinaryName},
@@ -257,8 +231,6 @@ func funcs() template.FuncMap {
 	}
 }
 
-// splitTap turns the installable tap name ("neetozone/tap") back into the
-// GitHub coordinates GoReleaser needs ("neetozone", "homebrew-tap").
 func splitTap(tap string) (owner, repo string) {
 	owner, repo, found := strings.Cut(tap, "/")
 	if !found || repo == "" {
@@ -286,7 +258,6 @@ func commonsRawBase(p config.Product) string {
 	case ref == "":
 		ref = "main"
 	case bareSemver.MatchString(ref):
-		// "1.2.0" is a version; "main" or "v1.2.0" is already a ref.
 		ref = "v" + ref
 	}
 	return "https://raw.githubusercontent.com/neetozone/neeto-cli-commons/" + ref

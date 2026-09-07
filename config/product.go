@@ -25,6 +25,7 @@ type Product struct {
 	ModulePath string `yaml:"module_path"`
 
 	CompanyName      string `yaml:"company_name"`
+	License          string `yaml:"license"`
 	SupportEmail     string `yaml:"support_email"`
 	ShortDescription string `yaml:"short_description"`
 	LongDescription  string `yaml:"long_description"`
@@ -68,9 +69,6 @@ func DeriveBinary(pretty string) string {
 	return b.String()
 }
 
-// DeriveRepoName turns "neetokb" into "neeto-kb-cli", matching the house
-// convention. The previous rule produced "neetokb-cli", which shipped broken
-// homepage and clone URLs in neeto-kb-cli.
 func DeriveRepoName(binary string) string {
 	if binary == "" {
 		return ""
@@ -115,8 +113,6 @@ func (p *Product) ApplyDerivations() {
 	if p.Tenancy == "" {
 		p.Tenancy = TenancySubdomain
 	}
-	// Homebrew strips the "homebrew-" prefix, so "neetozone/tap" is the form
-	// users must type. The old default produced "neetozone/homebrew-tap".
 	if p.HomebrewTap == "" {
 		p.HomebrewTap = p.GithubOrg + "/tap"
 	}
@@ -144,8 +140,6 @@ func (p *Product) ApplyDerivations() {
 	p.PriorityFields = normalisePriorityFields(p.PriorityFields)
 }
 
-// DefaultPriorityFields is the product-agnostic ordering. Products append their
-// own domain fields; identity always leads.
 func DefaultPriorityFields() []string {
 	return []string{
 		"sid", "id", "name", "title", "email", "first_name", "last_name",
@@ -153,9 +147,6 @@ func DefaultPriorityFields() []string {
 	}
 }
 
-// normalisePriorityFields guarantees identity fields lead, whatever the product
-// supplied. Five products plus the template shipped a list with no "id" at all,
-// which pushed the primary key out of the column budget.
 func normalisePriorityFields(fields []string) []string {
 	seen := map[string]bool{}
 	out := make([]string, 0, len(fields)+2)
@@ -172,9 +163,6 @@ func normalisePriorityFields(fields []string) []string {
 	return out
 }
 
-// RootShort is the canonical root command Short. Eight products currently carry
-// a Short that is just the product name and no information; composing it here
-// means the wording is decided once.
 func (p Product) RootShort() string {
 	title := p.PrettyName + " CLI"
 	d := strings.TrimSpace(p.ShortDescription)
@@ -212,7 +200,7 @@ func (p Product) Validate() error {
 	if p.Tenancy == TenancySingleHost && p.APIHost == "" {
 		return fmt.Errorf("api_host is required when tenancy is %q", TenancySingleHost)
 	}
-	if !strings.HasPrefix(p.APIBasePath, "/") {
+	if !strings.HasPrefix(p.APIBasePath, "/") || len(p.APIBasePath) < 2 {
 		return fmt.Errorf("api_base_path %q must start with /", p.APIBasePath)
 	}
 	return nil

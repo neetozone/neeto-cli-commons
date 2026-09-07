@@ -101,11 +101,6 @@ func atomicWrite(path string, data []byte) error {
 	return os.Rename(tmp, path)
 }
 
-// upsertBlock ensures the file at path contains exactly one block delimited by
-// start/end marker lines, with the given body. Any pre-existing block is
-// removed and a fresh one is appended, so re-running overwrites the config
-// without ever duplicating it. Content outside the block is preserved. Returns
-// true when an existing block was replaced.
 func upsertBlock(path, start, end, body string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {

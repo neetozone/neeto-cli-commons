@@ -1,6 +1,3 @@
-// Package questionnaire drives interactive and file-based collection of
-// template variables from a user. The output is always a fully populated
-// vars.Variables that has passed vars.Validate.
 package questionnaire
 
 import (
@@ -12,8 +9,6 @@ import (
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
 )
 
-// Ask runs the full interactive questionnaire. The returned Variables is
-// validated before return.
 func Ask(templateVersion string) (*vars.Variables, error) {
 	if !isTTY() {
 		return nil, fmt.Errorf("interactive mode requires a TTY; use --config answers.yml for non-interactive runs")
@@ -22,8 +17,6 @@ func Ask(templateVersion string) (*vars.Variables, error) {
 	v := vars.Variables{TemplateVersion: templateVersion}
 	v.Tenancy = config.TenancySubdomain
 
-	// Group 1: collect PrettyName first so we can derive defaults before
-	// the rest of the form renders.
 	prettyForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().

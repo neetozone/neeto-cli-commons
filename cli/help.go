@@ -12,8 +12,6 @@ import (
 
 const requiredFlagSuffix = " (required)"
 
-// templateFuncs are registered process-wide by cobra, so every App would
-// otherwise re-register them.
 var templateFuncs sync.Once
 
 func registerTemplateFuncs() {
@@ -23,8 +21,6 @@ func registerTemplateFuncs() {
 	})
 }
 
-// bold emphasises help section headers, the way gh does. Plain text when the
-// output is piped or when NO_COLOR is set (https://no-color.org).
 func bold(s string) string {
 	if !output.IsTTY() || os.Getenv("NO_COLOR") != "" {
 		return s
@@ -32,8 +28,6 @@ func bold(s string) string {
 	return "\033[1m" + s + "\033[0m"
 }
 
-// flagUsages appends the "(required)" marker at render time, so the marker
-// never reaches the `commands` catalog the docs sites generate from.
 func flagUsages(flags *pflag.FlagSet) string {
 	var marked []*pflag.Flag
 	flags.VisitAll(func(f *pflag.Flag) {
@@ -51,12 +45,6 @@ func flagUsages(flags *pflag.FlagSet) string {
 	return strings.TrimRight(flags.FlagUsages(), " \t\n")
 }
 
-// usageTemplate mirrors gh's help layout: uppercase section headers, two-space
-// indented bodies, examples after the flags. It replaces cobra's default,
-// which also appends a "Use [command] --help" footer we don't want.
-//
-// Subcommands inherit this: cobra walks up to the parent when a command has no
-// template of its own.
 const usageTemplate = `{{bold "USAGE"}}{{if .Runnable}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}

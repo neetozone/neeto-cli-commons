@@ -31,16 +31,10 @@ func (a *App) resolveUpdate(goos string, homebrew bool) (method, command string)
 	case homebrew:
 		return "Homebrew", fmt.Sprintf("brew update && brew upgrade %s", a.Product.BrewFormula())
 	default:
-		// Download to a temp file before executing so a failed download
-		// (404/DNS) surfaces as a non-zero exit instead of being swallowed
-		// by the pipe (`curl | sh` reports sh's exit code, not curl's).
 		return "shell-script", fmt.Sprintf(`f="$(mktemp)" && trap 'rm -f "$f"' EXIT && curl -fsSL %s -o "$f" && sh "$f"`, a.Product.InstallShURL)
 	}
 }
 
-// isHomebrewInstall reports whether the running binary lives inside a Homebrew
-// Cellar, which is the canonical marker of a formula-managed install on both
-// Apple Silicon (/opt/homebrew/Cellar) and Intel (/usr/local/Cellar).
 func isHomebrewInstall() bool {
 	exe, err := os.Executable()
 	if err != nil {

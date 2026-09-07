@@ -368,8 +368,6 @@ func TestNamesCoverEverySection(t *testing.T) {
 }
 
 func TestAllDerivesPluginURLsFromTheModulePath(t *testing.T) {
-	// neeto-kb-cli shipped plugin.json pointing at github.com/neetozone/neetokb-cli,
-	// which 404s. Generating it from the module path makes that impossible.
 	p := product(t, "pretty_name: NeetoKB\nbinary_name: neetokb\n")
 	files, err := render.All(p)
 	if err != nil {
