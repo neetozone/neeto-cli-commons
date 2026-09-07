@@ -17,10 +17,14 @@ for tool in git go gh; do
   fi
 done
 
-export GOPRIVATE="github.com/neetozone/*"
-if [ -n "${GITHUB_TOKEN:-}" ]; then
-  git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  echo "GITHUB_TOKEN is not set. The product repos are private, so this cannot clone, push or open a pull request without one." >&2
+  exit 1
 fi
+
+export GOPRIVATE="github.com/neetozone/*"
+export GH_TOKEN="${GITHUB_TOKEN}"
+git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
 PRODUCTS=$(grep -vE '^[[:space:]]*(#|$)' products.txt)
 BRANCH="bump-neeto-cli-commons-${COMMONS_VERSION}"
