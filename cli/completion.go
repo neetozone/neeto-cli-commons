@@ -20,7 +20,7 @@ func (a *App) newCompletionCommand() *cobra.Command {
 		Long: fmt.Sprintf(
 			"Install shell completion for %s.\n\n"+
 				"Running \"%s completion <shell>\" writes the completion script under\n"+
-				"~/%s/completions and wires your shell to load it on the next start —\n"+
+				"~/%s and wires your shell to load it on the next start —\n"+
 				"no manual sourcing needed. Re-running refreshes the script and shell config.\n"+
 				"Pass --print to emit the raw script to standard output instead.",
 			name, name, a.completionsSubdir(),

@@ -63,16 +63,16 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 // NeetoInvoice answer. The rebuilt block uses the canonical key names, so the
 // JSON envelope reads the same whichever shape the API sent.
 func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
-	totalPages := intFrom(parsed, "total_pages")
+	totalPages := output.IntFrom(parsed, "total_pages")
 	if totalPages == 0 {
 		return nil
 	}
 
 	block := client.Pagination{
-		TotalRecords:      intFrom(parsed, "total_records", "total_count"),
+		TotalRecords:      output.IntFrom(parsed, "total_records", "total_count"),
 		TotalPages:        totalPages,
-		CurrentPageNumber: intFrom(parsed, "current_page_number", "current_page", "page"),
-		PageSize:          intFrom(parsed, "page_size", "per_page"),
+		CurrentPageNumber: output.IntFrom(parsed, "current_page_number", "current_page", "page"),
+		PageSize:          output.IntFrom(parsed, "page_size", "per_page"),
 	}
 
 	out, err := json.Marshal(block)
@@ -88,9 +88,9 @@ func intFrom(parsed map[string]json.RawMessage, keys ...string) int {
 		if !ok {
 			continue
 		}
-		var n int
-		if json.Unmarshal(raw, &n) == nil && n != 0 {
-			return n
+		var n float64
+		if json.Unmarshal(raw, &n) == nil {
+			return int(n)
 		}
 	}
 	return 0

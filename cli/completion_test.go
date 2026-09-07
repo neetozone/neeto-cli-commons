@@ -263,3 +263,19 @@ func TestUpsertBlockRefusesUnterminatedBlock(t *testing.T) {
 		t.Fatalf("file was modified despite the error:\n%s", data)
 	}
 }
+
+func TestCompletionHelpDoesNotDoubleTheCompletionsDirectory(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+
+	for _, c := range a.Root().Commands() {
+		if c.Name() != "completion" {
+			continue
+		}
+		if strings.Contains(c.Long, "completions/completions") {
+			t.Errorf("completion help documents a doubled path:\n%s", c.Long)
+		}
+		if !strings.Contains(c.Long, "~/.config/neetodesk/completions") {
+			t.Errorf("completion help lost the real path:\n%s", c.Long)
+		}
+	}
+}

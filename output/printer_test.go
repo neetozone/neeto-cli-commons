@@ -513,3 +513,39 @@ func TestPrintPaginationSummaryAcceptsEitherTotalKey(t *testing.T) {
 		}
 	}
 }
+
+func TestIntFromPrefersPresenceOverNonZero(t *testing.T) {
+	cases := []struct {
+		body string
+		keys []string
+		want int
+	}{
+		{`{"total_records":0,"total_count":250}`, []string{"total_records", "total_count"}, 0},
+		{`{"current_page_number":0,"page":3}`, []string{"current_page_number", "current_page", "page"}, 0},
+		{`{"total_count":250}`, []string{"total_records", "total_count"}, 250},
+		{`{"total_pages":12.0}`, []string{"total_pages"}, 12},
+		{`{}`, []string{"total_pages"}, 0},
+		{`{"total_pages":"nope"}`, []string{"total_pages"}, 0},
+	}
+
+	for _, c := range cases {
+		var parsed map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(c.body), &parsed); err != nil {
+			t.Fatal(err)
+		}
+		if got := IntFrom(parsed, c.keys...); got != c.want {
+			t.Errorf("IntFrom(%s, %v) = %d, want %d", c.body, c.keys, got, c.want)
+		}
+	}
+}
+
+func TestPrintPaginationSummaryReportsAnEmptyPageAsEmpty(t *testing.T) {
+	pr, buf := newPrettyPrinter()
+
+	pr.printPaginationSummary(json.RawMessage(`{"current_page_number":0,"total_pages":0,"total_records":0,"total_count":250}`))
+
+	want := "Page 0 of 0 (0 total records)"
+	if got := strings.TrimSpace(buf.String()); got != want {
+		t.Errorf("summary = %q, want %q; a present zero must beat a later key", got, want)
+	}
+}

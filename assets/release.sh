@@ -10,6 +10,17 @@ if echo "$LAST_COMMIT_MSG" | grep -q "^Bump version to "; then
   exit 0
 fi
 
+if ! command -v gh >/dev/null 2>&1; then
+  echo "gh is not on PATH; installing it."
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+  sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq gh
+fi
+
 for tool in git go gh aws goreleaser sha256sum; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Required tool not found on PATH: $tool" >&2
