@@ -26,7 +26,7 @@ export GOPRIVATE="github.com/neetozone/*"
 export GH_TOKEN="${GITHUB_TOKEN}"
 git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
-PRODUCTS=$(grep -vE '^[[:space:]]*(#|$)' products.txt)
+PRODUCTS=$(sed -e 's/#.*//' -e 's/[[:space:]]//g' products.txt | grep -v '^$')
 BRANCH="bump-neeto-cli-commons-${COMMONS_VERSION}"
 WORKDIR=$(mktemp -d)
 trap 'rm -rf "$WORKDIR"' EXIT INT TERM

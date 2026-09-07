@@ -37,6 +37,7 @@ if [ -z "$VERSION_LABEL" ]; then
 fi
 
 CURRENT_VERSION=$(tr -d '[:space:]' < VERSION)
+CURRENT_VERSION=${CURRENT_VERSION#v}
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
 case "$VERSION_LABEL" in

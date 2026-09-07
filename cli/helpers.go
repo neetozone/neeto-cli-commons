@@ -74,20 +74,6 @@ func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
 	return out
 }
 
-func intFrom(parsed map[string]json.RawMessage, keys ...string) int {
-	for _, key := range keys {
-		raw, ok := parsed[key]
-		if !ok {
-			continue
-		}
-		var n float64
-		if json.Unmarshal(raw, &n) == nil {
-			return int(n)
-		}
-	}
-	return 0
-}
-
 func (a *App) PrintResource(data json.RawMessage, breadcrumbs []output.Breadcrumb) {
 	a.Printer.Print(data, breadcrumbs)
 }

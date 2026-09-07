@@ -294,7 +294,7 @@ func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
 	total := IntFrom(parsed, "total_records", "total_count")
 	totalPages := IntFrom(parsed, "total_pages")
 
-	fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, totalPages, total)
+	_, _ = fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, totalPages, total)
 }
 
 func IntFrom(parsed map[string]json.RawMessage, keys ...string) int {
