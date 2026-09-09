@@ -52,6 +52,8 @@ for repo in $PRODUCTS; do
     cd "$target"
 
     git config core.hooksPath /dev/null
+    git config user.name "NeetoBot"
+    git config user.email "bot@neeto.com"
     git checkout -q -b "$BRANCH"
 
     if [ ! -f .neeto-cli.yml ]; then
