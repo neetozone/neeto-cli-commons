@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/neetozone/neeto-cli-commons/auth"
@@ -104,7 +105,12 @@ func withParams(u string, params url.Values) string {
 		return u
 	}
 
-	return u + "?" + params.Encode()
+	separator := "?"
+	if strings.Contains(u, "?") {
+		separator = "&"
+	}
+
+	return u + separator + params.Encode()
 }
 
 func (c *Client) doWithBody(method, path string, body any) (json.RawMessage, error) {

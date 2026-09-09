@@ -264,6 +264,14 @@ func TestDeleteWithParams(t *testing.T) {
 	}
 }
 
+func TestWithParamsKeepsAnExistingQueryString(t *testing.T) {
+	got := withParams("https://example.com/items?active=true", url.Values{"email": {"sam@example.com"}})
+	want := "https://example.com/items?active=true&email=sam%40example.com"
+	if got != want {
+		t.Errorf("withParams() = %q, want %q", got, want)
+	}
+}
+
 func TestDeleteWithParams_NilParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.RawQuery != "" {
