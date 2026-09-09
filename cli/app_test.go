@@ -130,3 +130,24 @@ func TestEnforceUnknownSubcommandErrors_RunnableLeafCommandUnaffected(t *testing
 		t.Error("expected the leaf command's own RunE to have been called")
 	}
 }
+
+func TestExecuteInstallsUnknownSubcommandErrors(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+	products := addProductsGroup(t, a)
+	a.Root().SetArgs([]string{"products"})
+
+	a.Execute()
+
+	if !products.Runnable() {
+		t.Fatal("Execute should make a group command runnable so cobra validates its args")
+	}
+	if products.Args == nil {
+		t.Fatal("Execute should install an args validator on a group command")
+	}
+	if err := products.Args(products, []string{"cal"}); err == nil {
+		t.Error("the installed validator should reject an unknown subcommand")
+	}
+	if !isGroupCommand(products) {
+		t.Error("Execute should annotate a group command so its help omits the use line")
+	}
+}
