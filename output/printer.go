@@ -71,6 +71,13 @@ func (pr *Printer) priorityFields() []string {
 
 func IsTTY() bool { return isTerminal(os.Stdout) }
 
+func TerminalWidth() int {
+	if width, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && width > 0 {
+		return width
+	}
+	return fallbackWidth
+}
+
 func isTerminal(w io.Writer) bool {
 	f, ok := w.(*os.File)
 	return ok && term.IsTerminal(int(f.Fd()))

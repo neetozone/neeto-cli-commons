@@ -56,7 +56,7 @@ func flagUsages(flags *pflag.FlagSet) string {
 		}
 	}()
 
-	return strings.TrimRight(flags.FlagUsages(), " \t\n")
+	return strings.TrimRight(flags.FlagUsagesWrapped(output.TerminalWidth()), " \t\n")
 }
 
 const usageTemplate = `{{bold "USAGE"}}{{if and .Runnable (not (isGroupCommand .))}}

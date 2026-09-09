@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/neetozone/neeto-cli-commons/output"
 	"github.com/spf13/cobra"
 )
 
@@ -152,5 +153,22 @@ func TestUsageOmitsLearnMoreWithoutADocsURL(t *testing.T) {
 
 	if strings.Contains(a.Root().UsageString(), "LEARN MORE") {
 		t.Error("help should omit LEARN MORE when the product has no docs URL")
+	}
+}
+
+func TestLongFlagUsageWrapsInsteadOfRunningPastTheTerminal(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+	child := newTestSubcommand(t, a)
+	child.Flags().String("time-zone", "", "Time zone as an IANA name, e.g. America/New_York "+
+		"(full list: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
+
+	usage := child.UsageString()
+	for _, line := range strings.Split(usage, "\n") {
+		if len(line) > output.TerminalWidth() {
+			t.Errorf("help line runs past the terminal at %d columns:\n%q", output.TerminalWidth(), line)
+		}
+	}
+	if !strings.Contains(usage, "List_of_tz_database_time_zones") {
+		t.Errorf("wrapping dropped the URL:\n%s", usage)
 	}
 }

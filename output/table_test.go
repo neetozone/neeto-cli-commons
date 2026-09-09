@@ -432,11 +432,17 @@ func contains(xs []string, want string) bool {
 }
 
 func TestPickColumns_DropsAColumnThatHoldsObjectsInALaterRow(t *testing.T) {
-	got := columns(t, `[{"sid":"a","name":"Oliver Smith","periods":null},
-		{"sid":"b","name":"Working hours","periods":[{"wday":"monday","start_time":"09:00"}]}]`)
+	firstRowValues := map[string]string{"null": "null", "a scalar": `"none"`, "an empty list": "[]"}
 
-	if slices.Contains(got, "periods") {
-		t.Errorf("pickColumns = %v, want periods dropped once a row holds objects", got)
+	for name, first := range firstRowValues {
+		t.Run(name, func(t *testing.T) {
+			got := columns(t, `[{"sid":"a","name":"Oliver Smith","periods":`+first+`},
+				{"sid":"b","name":"Working hours","periods":[{"wday":"monday","start_time":"09:00"}]}]`)
+
+			if slices.Contains(got, "periods") {
+				t.Errorf("pickColumns = %v, want periods dropped once a row holds objects", got)
+			}
+		})
 	}
 }
 
