@@ -137,6 +137,13 @@ func (pr *Printer) pickColumns(rows []map[string]interface{}) []string {
 		}
 		displayable[k] = true
 	}
+	for _, row := range rows[1:] {
+		for k, v := range row {
+			if displayable[k] && !isDisplayable(v) {
+				delete(displayable, k)
+			}
+		}
+	}
 
 	urlFields := map[string]bool{}
 	var urlCols []string

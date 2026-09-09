@@ -430,3 +430,36 @@ func contains(xs []string, want string) bool {
 	}
 	return false
 }
+
+func TestPickColumns_DropsAColumnThatHoldsObjectsInALaterRow(t *testing.T) {
+	got := columns(t, `[{"sid":"a","name":"Oliver Smith","periods":null},
+		{"sid":"b","name":"Working hours","periods":[{"wday":"monday","start_time":"09:00"}]}]`)
+
+	if slices.Contains(got, "periods") {
+		t.Errorf("pickColumns = %v, want periods dropped once a row holds objects", got)
+	}
+}
+
+func TestPrintTable_NeverLeaksGoMapSyntax(t *testing.T) {
+	pr, buf := newTestPrinter()
+	period := map[string]interface{}{"wday": "monday", "start_time": "09:00"}
+
+	pr.renderGrid([]string{"NAME", "PERIODS"}, buildGrid([][]interface{}{
+		{"Working hours", []interface{}{period, period}},
+	}), 0)
+
+	if strings.Contains(buf.String(), "map[") {
+		t.Errorf("table rendered Go map syntax:\n%s", buf.String())
+	}
+}
+
+func TestFormatValue_DescribesObjectsInsteadOfDumpingThem(t *testing.T) {
+	object := map[string]interface{}{"wday": "monday", "start_time": "09:00"}
+
+	if got := formatValue(object); strings.Contains(got, "map[") {
+		t.Errorf("formatValue(object) = %q, want a description rather than Go syntax", got)
+	}
+	if got := formatValue([]interface{}{object, object}); got != "(2 items)" {
+		t.Errorf("formatValue(objects) = %q, want %q", got, "(2 items)")
+	}
+}

@@ -87,11 +87,16 @@ func formatValue(v interface{}) string {
 		if len(val) == 0 {
 			return "-"
 		}
+		if !isDisplayable(val) {
+			return "(" + describeValue(val) + ")"
+		}
 		parts := make([]string, len(val))
 		for i, item := range val {
 			parts[i] = formatValue(item)
 		}
 		return strings.Join(parts, ", ")
+	case map[string]interface{}:
+		return "(" + describeValue(val) + ")"
 	default:
 		return fmt.Sprintf("%v", val)
 	}
