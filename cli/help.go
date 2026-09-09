@@ -12,12 +12,15 @@ import (
 
 const requiredFlagSuffix = " (required)"
 
+const groupCommandAnnotation = "neeto-cli/group-command"
+
 var templateFuncs sync.Once
 
 func registerTemplateFuncs() {
 	templateFuncs.Do(func() {
 		cobra.AddTemplateFunc("bold", bold)
 		cobra.AddTemplateFunc("flagUsages", flagUsages)
+		cobra.AddTemplateFunc("isGroupCommand", isGroupCommand)
 	})
 }
 
@@ -26,6 +29,10 @@ func bold(s string) string {
 		return s
 	}
 	return "\033[1m" + s + "\033[0m"
+}
+
+func isGroupCommand(cmd *cobra.Command) bool {
+	return cmd.Annotations[groupCommandAnnotation] == "true"
 }
 
 func flagUsages(flags *pflag.FlagSet) string {
@@ -45,7 +52,7 @@ func flagUsages(flags *pflag.FlagSet) string {
 	return strings.TrimRight(flags.FlagUsages(), " \t\n")
 }
 
-const usageTemplate = `{{bold "USAGE"}}{{if .Runnable}}
+const usageTemplate = `{{bold "USAGE"}}{{if and .Runnable (not (isGroupCommand .))}}
   {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
