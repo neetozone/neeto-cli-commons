@@ -62,14 +62,8 @@ echo "Releasing v${VERSION} (bumped from ${CURRENT_VERSION} via the ${VERSION_LA
 
 git config core.hooksPath /dev/null
 
-RELEASE_ACTOR=$(gh api user --jq '.login' 2>/dev/null || true)
-if [ -z "$RELEASE_ACTOR" ]; then
-  echo "Could not resolve the GitHub identity behind GITHUB_TOKEN; git needs one to commit the version bump." >&2
-  exit 1
-fi
-RELEASE_ACTOR_ID=$(gh api user --jq '.id' 2>/dev/null || true)
-git config user.name "$RELEASE_ACTOR"
-git config user.email "${RELEASE_ACTOR_ID}+${RELEASE_ACTOR}@users.noreply.github.com"
+git config user.name "NeetoBot"
+git config user.email "bot@neeto.com"
 
 git fetch origin main
 git checkout main

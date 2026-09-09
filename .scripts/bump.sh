@@ -26,13 +26,6 @@ export GOPRIVATE="github.com/neetozone/*"
 export GH_TOKEN="${GITHUB_TOKEN}"
 git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 
-BUMP_ACTOR=$(gh api user --jq '.login' 2>/dev/null || true)
-if [ -z "$BUMP_ACTOR" ]; then
-  echo "Could not resolve the GitHub identity behind GITHUB_TOKEN; git needs one to commit the bump." >&2
-  exit 1
-fi
-BUMP_ACTOR_ID=$(gh api user --jq '.id' 2>/dev/null || true)
-
 PRODUCTS=$(sed -e 's/#.*//' -e 's/[[:space:]]//g' products.txt | grep -v '^$')
 BRANCH="bump-neeto-cli-commons-${COMMONS_VERSION}"
 WORKDIR=$(mktemp -d)
@@ -59,8 +52,8 @@ for repo in $PRODUCTS; do
     cd "$target"
 
     git config core.hooksPath /dev/null
-    git config user.name "$BUMP_ACTOR"
-    git config user.email "${BUMP_ACTOR_ID}+${BUMP_ACTOR}@users.noreply.github.com"
+    git config user.name "NeetoBot"
+    git config user.email "bot@neeto.com"
     git checkout -q -b "$BRANCH"
 
     if [ ! -f .neeto-cli.yml ]; then
