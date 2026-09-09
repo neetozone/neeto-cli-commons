@@ -96,3 +96,32 @@ func TestBoldRespectsNoColor(t *testing.T) {
 		t.Errorf("bold(%q) = %q, want it unstyled under NO_COLOR", "USAGE", got)
 	}
 }
+
+func TestUsageOmitsUseLineForGroupCommands(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+	group := &cobra.Command{Use: "products", Short: "Inspect products"}
+	group.AddCommand(&cobra.Command{Use: "list", Short: "List products", RunE: func(*cobra.Command, []string) error { return nil }})
+	a.Root().AddCommand(group)
+	enforceUnknownSubcommandErrors(a.Root())
+
+	usage := group.UsageString()
+	if strings.Contains(usage, "neetodesk products [flags]") {
+		t.Errorf("group help should not advertise its own use line, got:\n%s", usage)
+	}
+	if !strings.Contains(usage, "neetodesk products [command]") {
+		t.Errorf("group help should still advertise its subcommands, got:\n%s", usage)
+	}
+}
+
+func TestUsageKeepsUseLineForRunnableParents(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+	parent := &cobra.Command{Use: "setup", Short: "Set up", RunE: func(*cobra.Command, []string) error { return nil }}
+	parent.AddCommand(&cobra.Command{Use: "claude", Short: "Claude", RunE: func(*cobra.Command, []string) error { return nil }})
+	a.Root().AddCommand(parent)
+	enforceUnknownSubcommandErrors(a.Root())
+
+	usage := parent.UsageString()
+	if !strings.Contains(usage, "neetodesk setup [flags]") {
+		t.Errorf("a genuinely runnable parent should keep its use line, got:\n%s", usage)
+	}
+}

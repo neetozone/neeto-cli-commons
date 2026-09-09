@@ -111,6 +111,8 @@ func (a *App) examples() string {
 }
 
 func (a *App) Execute() {
+	enforceUnknownSubcommandErrors(a.root)
+
 	cmd, err := a.root.ExecuteC()
 	if err == nil {
 		return
@@ -136,6 +138,54 @@ func (a *App) exitStatus(err error) (int, bool) {
 		return a.ExitStatus(err)
 	}
 	return 1, true
+}
+
+func enforceUnknownSubcommandErrors(cmd *cobra.Command) {
+	for _, sub := range cmd.Commands() {
+		if sub.HasSubCommands() && !sub.Runnable() {
+			markGroupCommand(sub)
+			sub.RunE = func(cmd *cobra.Command, _ []string) error {
+				return cmd.Help()
+			}
+			if sub.Args == nil {
+				sub.Args = unknownSubcommandArgs
+			}
+		}
+		enforceUnknownSubcommandErrors(sub)
+	}
+}
+
+func markGroupCommand(cmd *cobra.Command) {
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[groupCommandAnnotation] = "true"
+}
+
+func unknownSubcommandArgs(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
+	return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), subcommandSuggestions(cmd, args[0]))
+}
+
+func subcommandSuggestions(cmd *cobra.Command, name string) string {
+	if cmd.DisableSuggestions {
+		return ""
+	}
+	if cmd.SuggestionsMinimumDistance <= 0 {
+		cmd.SuggestionsMinimumDistance = 2
+	}
+	suggestions := cmd.SuggestionsFor(name)
+	if len(suggestions) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("\n\nDid you mean this?\n")
+	for _, s := range suggestions {
+		fmt.Fprintf(&b, "\t%s\n", s)
+	}
+	return b.String()
 }
 
 func isUsageError(err error) bool {
