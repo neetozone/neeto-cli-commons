@@ -125,3 +125,32 @@ func TestUsageKeepsUseLineForRunnableParents(t *testing.T) {
 		t.Errorf("a genuinely runnable parent should keep its use line, got:\n%s", usage)
 	}
 }
+
+func TestUsageLinksToTheDocs(t *testing.T) {
+	p := subdomainProduct()
+	p.DocsURL = "https://apidocs.neetodesk.com/cli/introduction"
+	a, _ := newTestApp(t, p)
+
+	usage := a.Root().UsageString()
+	if !strings.Contains(usage, "LEARN MORE") || !strings.Contains(usage, p.DocsURL) {
+		t.Errorf("expected the docs URL under a LEARN MORE section, got:\n%s", usage)
+	}
+}
+
+func TestSubcommandUsageLinksToTheDocs(t *testing.T) {
+	p := subdomainProduct()
+	p.DocsURL = "https://apidocs.neetodesk.com/cli/introduction"
+	a, _ := newTestApp(t, p)
+
+	if usage := newTestSubcommand(t, a).UsageString(); !strings.Contains(usage, p.DocsURL) {
+		t.Errorf("expected the docs URL in subcommand help, got:\n%s", usage)
+	}
+}
+
+func TestUsageOmitsLearnMoreWithoutADocsURL(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+
+	if strings.Contains(a.Root().UsageString(), "LEARN MORE") {
+		t.Error("help should omit LEARN MORE when the product has no docs URL")
+	}
+}
