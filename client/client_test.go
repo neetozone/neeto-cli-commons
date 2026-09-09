@@ -246,6 +246,46 @@ func TestDelete(t *testing.T) {
 	}
 }
 
+func TestDeleteWithParams(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Errorf("method = %q, want DELETE", r.Method)
+		}
+		if got := r.URL.Query().Get("email"); got != "sam@example.com" {
+			t.Errorf("email param = %q, want sam@example.com", got)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	err := newTestClient(server).DeleteWithParams("/items/abc", url.Values{"email": {"sam@example.com"}})
+	if err != nil {
+		t.Fatalf("DeleteWithParams() error = %v", err)
+	}
+}
+
+func TestWithParamsKeepsAnExistingQueryString(t *testing.T) {
+	got := withParams("https://example.com/items?active=true", url.Values{"email": {"sam@example.com"}})
+	want := "https://example.com/items?active=true&email=sam%40example.com"
+	if got != want {
+		t.Errorf("withParams() = %q, want %q", got, want)
+	}
+}
+
+func TestDeleteWithParams_NilParams(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RawQuery != "" {
+			t.Errorf("unexpected query string %q", r.URL.RawQuery)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	if err := newTestClient(server).DeleteWithParams("/items/abc", nil); err != nil {
+		t.Fatalf("DeleteWithParams() error = %v", err)
+	}
+}
+
 func TestDeleteWithBody(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {

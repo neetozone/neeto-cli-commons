@@ -17,6 +17,7 @@ credentials, so a command never builds a URL or reads a token itself.
 | `c.Put(path, body)` | `PUT` with a JSON body. This is the usual update verb. |
 | `c.Patch(path, body)` | `PATCH` with a JSON body, for endpoints that expect a partial update. |
 | `c.Delete(path)` | `DELETE`. |
+| `c.DeleteWithParams(path, params)` | `DELETE`, with `params` as the query string, for endpoints that need more than the record ID. |
 
 `path` is relative to `{{.APIBasePath}}`. Every call returns the raw response body, so a command
 passes it straight to a printer rather than unmarshalling it.

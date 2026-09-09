@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/neetozone/neeto-cli-commons/auth"
@@ -75,7 +76,11 @@ func (c *Client) Patch(path string, body any) (json.RawMessage, error) {
 }
 
 func (c *Client) Delete(path string) error {
-	req, err := http.NewRequest(http.MethodDelete, c.BaseURL+path, nil)
+	return c.DeleteWithParams(path, nil)
+}
+
+func (c *Client) DeleteWithParams(path string, params url.Values) error {
+	req, err := http.NewRequest(http.MethodDelete, withParams(c.BaseURL+path, params), nil)
 	if err != nil {
 		return err
 	}
@@ -88,16 +93,24 @@ func (c *Client) DeleteWithBody(path string, body any) (json.RawMessage, error) 
 }
 
 func (c *Client) get(base, path string, params url.Values) (json.RawMessage, error) {
-	u := base + path
-	if len(params) > 0 {
-		u += "?" + params.Encode()
-	}
-
-	req, err := http.NewRequest(http.MethodGet, u, nil)
+	req, err := http.NewRequest(http.MethodGet, withParams(base+path, params), nil)
 	if err != nil {
 		return nil, err
 	}
 	return c.do(req)
+}
+
+func withParams(u string, params url.Values) string {
+	if len(params) == 0 {
+		return u
+	}
+
+	separator := "?"
+	if strings.Contains(u, "?") {
+		separator = "&"
+	}
+
+	return u + separator + params.Encode()
 }
 
 func (c *Client) doWithBody(method, path string, body any) (json.RawMessage, error) {
