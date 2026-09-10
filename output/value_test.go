@@ -176,6 +176,38 @@ func TestContainsURL_FindsNestedLinks(t *testing.T) {
 	}
 }
 
+func TestSanitizeControlChars(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"plain string passes through untouched", "single line reply", "single line reply"},
+		{"embedded newline collapses to a space", "At neeto, we are building a number of tools.\nToday we shipped one more.", "At neeto, we are building a number of tools. Today we shipped one more."},
+		{"tab collapses to a space", "col1\tcol2", "col1 col2"},
+		{"ansi colour sequence is removed entirely", "\x1b[31mred\x1b[0m", "red"},
+		{"ansi cursor sequence is removed entirely", "a\x1b[2Kb", "ab"},
+		{"osc hyperlink sequence is removed entirely", "\x1b]8;;http://x\x07link\x1b]8;;\x07", "link"},
+		{"carriage return collapses to a space", "line one\r\nline two", "line one line two"},
+		{"other C0 control chars are dropped", "a\x00b\x07c", "abc"},
+		{"C1 control chars are dropped", "a\u0085b\u009fc", "abc"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := sanitizeControlChars(tc.in); got != tc.want {
+				t.Errorf("sanitizeControlChars(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFormatValue_SanitizesControlCharsInStrings(t *testing.T) {
+	got := formatValue("first line\nsecond line")
+	if got != "first line second line" {
+		t.Errorf("formatValue = %q, want control chars sanitized", got)
+	}
+}
+
 func TestPadRight(t *testing.T) {
 	if got := padRight("ab", 5); got != "ab   " {
 		t.Errorf("padRight = %q, want %q", got, "ab   ")
