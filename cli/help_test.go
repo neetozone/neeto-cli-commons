@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/neetozone/neeto-cli-commons/output"
 	"github.com/spf13/cobra"
 )
 
@@ -123,5 +124,51 @@ func TestUsageKeepsUseLineForRunnableParents(t *testing.T) {
 	usage := parent.UsageString()
 	if !strings.Contains(usage, "neetodesk setup [flags]") {
 		t.Errorf("a genuinely runnable parent should keep its use line, got:\n%s", usage)
+	}
+}
+
+func TestUsageLinksToTheDocs(t *testing.T) {
+	p := subdomainProduct()
+	p.DocsURL = "https://apidocs.neetodesk.com/cli/introduction"
+	a, _ := newTestApp(t, p)
+
+	usage := a.Root().UsageString()
+	if !strings.Contains(usage, "LEARN MORE") || !strings.Contains(usage, p.DocsURL) {
+		t.Errorf("expected the docs URL under a LEARN MORE section, got:\n%s", usage)
+	}
+}
+
+func TestSubcommandUsageLinksToTheDocs(t *testing.T) {
+	p := subdomainProduct()
+	p.DocsURL = "https://apidocs.neetodesk.com/cli/introduction"
+	a, _ := newTestApp(t, p)
+
+	if usage := newTestSubcommand(t, a).UsageString(); !strings.Contains(usage, p.DocsURL) {
+		t.Errorf("expected the docs URL in subcommand help, got:\n%s", usage)
+	}
+}
+
+func TestUsageOmitsLearnMoreWithoutADocsURL(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+
+	if strings.Contains(a.Root().UsageString(), "LEARN MORE") {
+		t.Error("help should omit LEARN MORE when the product has no docs URL")
+	}
+}
+
+func TestLongFlagUsageWrapsInsteadOfRunningPastTheTerminal(t *testing.T) {
+	a, _ := newTestApp(t, subdomainProduct())
+	child := newTestSubcommand(t, a)
+	child.Flags().String("time-zone", "", "Time zone as an IANA name, e.g. America/New_York "+
+		"(full list: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)")
+
+	usage := child.UsageString()
+	for _, line := range strings.Split(usage, "\n") {
+		if len(line) > output.TerminalWidth() {
+			t.Errorf("help line runs past the terminal at %d columns:\n%q", output.TerminalWidth(), line)
+		}
+	}
+	if !strings.Contains(usage, "List_of_tz_database_time_zones") {
+		t.Errorf("wrapping dropped the URL:\n%s", usage)
 	}
 }

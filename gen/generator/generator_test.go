@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/neetozone/neeto-cli-commons/config"
 )
 
 func TestGenerateAndBuild(t *testing.T) {
@@ -172,5 +174,29 @@ func TestRun_RefusesNonEmpty(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "refusing to generate") {
 		t.Errorf("error = %q, want 'refusing to generate'", err.Error())
+	}
+}
+
+func TestRun_GeneratedConfigCarriesADocsURL(t *testing.T) {
+	tmp := t.TempDir()
+	out := filepath.Join(tmp, "testapp-cli")
+
+	err := Run(Options{
+		OutputDir:       out,
+		ConfigPath:      "testdata/golden_answers.yml",
+		SkipTidy:        true,
+		SkipGitInit:     true,
+		TemplateVersion: "test",
+	})
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	p, err := config.Load(filepath.Join(out, ".neeto-cli.yml"))
+	if err != nil {
+		t.Fatalf("the generated config does not parse: %v", err)
+	}
+	if want := "https://apidocs.testapp.com/cli/introduction"; p.DocsURL != want {
+		t.Errorf("DocsURL = %q, want %q", p.DocsURL, want)
 	}
 }

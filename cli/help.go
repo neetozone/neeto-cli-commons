@@ -10,9 +10,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const requiredFlagSuffix = " (required)"
-
-const groupCommandAnnotation = "neeto-cli/group-command"
+const (
+	requiredFlagSuffix     = " (required)"
+	docsURLAnnotation      = "neeto-cli/docs-url"
+	groupCommandAnnotation = "neeto-cli/group-command"
+)
 
 var templateFuncs sync.Once
 
@@ -21,6 +23,7 @@ func registerTemplateFuncs() {
 		cobra.AddTemplateFunc("bold", bold)
 		cobra.AddTemplateFunc("flagUsages", flagUsages)
 		cobra.AddTemplateFunc("isGroupCommand", isGroupCommand)
+		cobra.AddTemplateFunc("docsURL", docsURL)
 	})
 }
 
@@ -33,6 +36,10 @@ func bold(s string) string {
 
 func isGroupCommand(cmd *cobra.Command) bool {
 	return cmd.Annotations[groupCommandAnnotation] == "true"
+}
+
+func docsURL(cmd *cobra.Command) string {
+	return cmd.Root().Annotations[docsURLAnnotation]
 }
 
 func flagUsages(flags *pflag.FlagSet) string {
@@ -49,7 +56,7 @@ func flagUsages(flags *pflag.FlagSet) string {
 		}
 	}()
 
-	return strings.TrimRight(flags.FlagUsages(), " \t\n")
+	return strings.TrimRight(flags.FlagUsagesWrapped(output.TerminalWidth()), " \t\n")
 }
 
 const usageTemplate = `{{bold "USAGE"}}{{if and .Runnable (not (isGroupCommand .))}}
@@ -69,5 +76,8 @@ const usageTemplate = `{{bold "USAGE"}}{{if and .Runnable (not (isGroupCommand .
 {{.Example}}{{end}}{{if .HasHelpSubCommands}}
 
 {{bold "ADDITIONAL HELP TOPICS"}}{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{$docs := docsURL .}}{{if $docs}}
+
+{{bold "LEARN MORE"}}
+  {{$docs}}{{end}}
 `

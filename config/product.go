@@ -31,6 +31,7 @@ type Product struct {
 	LongDescription  string `yaml:"long_description"`
 
 	Domain      string `yaml:"domain"`
+	DocsURL     string `yaml:"docs_url"`
 	APIBasePath string `yaml:"api_base_path"`
 	EnvPrefix   string `yaml:"env_prefix"`
 	ConfigDir   string `yaml:"config_dir"`
