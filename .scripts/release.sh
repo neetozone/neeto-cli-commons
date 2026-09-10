@@ -25,7 +25,7 @@ for tool in git go gh goreleaser; do
   fi
 done
 
-PR_NUMBER=$(gh pr list --state merged --base main --limit 1 --json number --jq ".[0].number")
+PR_NUMBER=$(gh pr list --state merged --base main --limit 50 --json number,mergedAt --jq "sort_by(.mergedAt) | last | .number")
 if [ -z "$PR_NUMBER" ]; then
   echo "No merged PR found. Skipping release."
   exit 0

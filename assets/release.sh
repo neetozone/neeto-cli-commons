@@ -33,7 +33,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
   exit 1
 fi
 
-PR_NUMBER=$(gh pr list --state merged --base main --limit 1 --json number --jq ".[0].number")
+PR_NUMBER=$(gh pr list --state merged --base main --limit 50 --json number,mergedAt --jq "sort_by(.mergedAt) | last | .number")
 echo "Last merged PR number: $PR_NUMBER"
 
 if [ -z "$PR_NUMBER" ]; then
