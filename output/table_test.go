@@ -362,6 +362,72 @@ func TestTruncate(t *testing.T) {
 	}
 }
 
+func TestPrintTable_SanitizesControlCharsAndStaysRectangular(t *testing.T) {
+	pr, buf := newTestPrinter()
+
+	pr.printPretty(json.RawMessage(`[
+		{"id":"33a006aa","comment_type":"description","content":"At neeto, we are building a number of tools.\nToday we shipped one more."},
+		{"id":"44a006aa","comment_type":"reply","content":"single line reply"}]`))
+
+	out := strings.TrimRight(buf.String(), "\n")
+	lines := strings.Split(out, "\n")
+	if len(lines) != 4 {
+		t.Fatalf("table output has %d lines, want 4 (header, separator, 2 data rows) - the embedded newline must not spill onto an extra line:\n%s", len(lines), out)
+	}
+	if !strings.Contains(lines[2], "At neeto, we are building a number of tools. Today we shipped one more.") {
+		t.Errorf("row 1 did not flatten onto a single line: %q", lines[2])
+	}
+	if !strings.Contains(lines[3], "single line reply") {
+		t.Errorf("row 2 missing its content: %q", lines[3])
+	}
+
+	contentStart := strings.Index(lines[0], "CONTENT")
+	if contentStart <= 0 {
+		t.Fatalf("could not locate the CONTENT column in:\n%s", out)
+	}
+	for _, line := range lines[2:] {
+		if displayWidth(line) <= contentStart {
+			t.Fatalf("row is shorter than expected, columns are not aligned: %q", line)
+		}
+		if r := []rune(line)[contentStart-1]; r != ' ' {
+			t.Errorf("column boundary at %d is not padding in %q", contentStart, line)
+		}
+	}
+}
+
+func TestPrintTable_SanitizesTabsAndAnsiEscapesInCells(t *testing.T) {
+	pr, buf := newTestPrinter()
+
+	pr.printPretty(json.RawMessage(`[{"name":"tab\tseparated","note":"\u001b[31mred\u001b[0m"}]`))
+
+	out := buf.String()
+	if strings.ContainsRune(out, '\t') {
+		t.Errorf("table output still contains a raw tab:\n%q", out)
+	}
+	if strings.ContainsRune(out, '\x1b') {
+		t.Errorf("table output still contains a raw ANSI escape byte:\n%q", out)
+	}
+	if !strings.Contains(out, "tab separated") {
+		t.Errorf("table output missing tab-collapsed cell:\n%s", out)
+	}
+	if strings.Contains(out, "[31m") || strings.Contains(out, "[0m") {
+		t.Errorf("table output still shows the escape sequence as literal text:\n%s", out)
+	}
+	if !strings.Contains(out, "red") {
+		t.Errorf("table output missing the escape-stripped cell:\n%s", out)
+	}
+}
+
+func TestPrintTable_PlainStringCellsPassThroughUntouched(t *testing.T) {
+	pr, buf := newTestPrinter()
+
+	pr.printPretty(json.RawMessage(`[{"name":"Weekly sync","status":"confirmed"}]`))
+
+	if !strings.Contains(buf.String(), "Weekly sync") {
+		t.Errorf("table output missing untouched plain string:\n%s", buf.String())
+	}
+}
+
 func TestIsURL_SchemeIsCaseInsensitive(t *testing.T) {
 	for _, s := range []string{"https://example.com", "HTTPS://EXAMPLE.COM", "Http://Example.com"} {
 		if !isURL(s) {

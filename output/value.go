@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -82,7 +83,7 @@ func formatValue(v interface{}) string {
 		}
 		return fmt.Sprintf("%.2f", val)
 	case string:
-		return val
+		return sanitizeControlChars(val)
 	case []interface{}:
 		if len(val) == 0 {
 			return "-"
@@ -98,12 +99,36 @@ func formatValue(v interface{}) string {
 	case map[string]interface{}:
 		return "(" + describeValue(val) + ")"
 	default:
-		return fmt.Sprintf("%v", val)
+		return sanitizeControlChars(fmt.Sprintf("%v", val))
 	}
 }
 
+var ansiEscapeSequence = regexp.MustCompile("\x1b\\[[0-9;?]*[ -/]*[@-~]|\x1b\\][^\x07\x1b]*(?:\x07|\x1b\\\\)|\x1b[@-Z\\\\-_]")
+
+func sanitizeControlChars(s string) string {
+	s = ansiEscapeSequence.ReplaceAllString(s, "")
+
+	var b strings.Builder
+	b.Grow(len(s))
+	pendingSpace := false
+	for _, r := range s {
+		switch {
+		case r == ' ' || r == '\t' || r == '\n' || r == '\r':
+			pendingSpace = true
+		case r < 0x20 || (r >= 0x7f && r <= 0x9f):
+		default:
+			if pendingSpace {
+				b.WriteByte(' ')
+				pendingSpace = false
+			}
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
 func previewScalar(v interface{}) string {
-	return truncate(strings.TrimSpace(strings.ReplaceAll(formatValue(v), "\n", " ")), maxPreviewLen)
+	return truncate(formatValue(v), maxPreviewLen)
 }
 
 func inlineValue(v interface{}) string {
