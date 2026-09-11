@@ -301,6 +301,8 @@ func flattenLabelValues(rows []map[string]interface{}) ([]map[string]interface{}
 		}
 	}
 
+	reserved := reservedKeys(rows, keys)
+
 	var labels []string
 	seen := map[string]bool{}
 	for _, key := range keys {
@@ -313,7 +315,7 @@ func flattenLabelValues(rows []map[string]interface{}) ([]map[string]interface{}
 			for _, item := range items {
 				obj, _ := item.(map[string]interface{})
 				label := responseLabel(obj)
-				if _, taken := flattened[i][label]; taken {
+				if reserved[label] {
 					continue
 				}
 				flattened[i][label] = obj["value"]
@@ -326,6 +328,23 @@ func flattenLabelValues(rows []map[string]interface{}) ([]map[string]interface{}
 	}
 
 	return flattened, labels
+}
+
+func reservedKeys(rows []map[string]interface{}, flattenedKeys []string) map[string]bool {
+	flattening := make(map[string]bool, len(flattenedKeys))
+	for _, key := range flattenedKeys {
+		flattening[key] = true
+	}
+
+	reserved := map[string]bool{}
+	for _, row := range rows {
+		for key := range row {
+			if !flattening[key] {
+				reserved[key] = true
+			}
+		}
+	}
+	return reserved
 }
 
 func labelValueKeys(rows []map[string]interface{}) []string {

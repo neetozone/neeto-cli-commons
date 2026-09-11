@@ -508,16 +508,23 @@ func TestFlattenLabelValues_LeavesOtherListsAlone(t *testing.T) {
 }
 
 func TestFlattenLabelValues_KeepsTheRecordsFieldWhenALabelCollides(t *testing.T) {
-	payload := `[{"id":"s1","responses":[{"label":"id","value":"answered"}]}]`
+	payload := `[{"id":"s1","responses":[{"label":"id","value":"answered"}]},
+		{"responses":[{"label":"id","value":"answered too"}]}]`
 
 	var rows []map[string]interface{}
 	if err := json.Unmarshal([]byte(payload), &rows); err != nil {
 		t.Fatalf("bad sample json: %v", err)
 	}
 
-	flattened, _ := flattenLabelValues(rows)
+	flattened, answers := flattenLabelValues(rows)
 	if flattened[0]["id"] != "s1" {
 		t.Errorf("id = %v, want the record's own id to win", flattened[0]["id"])
+	}
+	if len(answers) != 0 {
+		t.Errorf("answers = %v, want a colliding label to claim no column on any row", answers)
+	}
+	if _, ok := flattened[1]["id"]; ok {
+		t.Errorf("row without its own id = %v, want the colliding label left out there too", flattened[1])
 	}
 }
 
@@ -539,7 +546,8 @@ func TestTableColumns_StopsAtTheColumnLimit(t *testing.T) {
 	flattened, labels := flattenLabelValues(rows)
 	pr, _ := newTestPrinter()
 
-	if got := len(pr.tableColumns(flattened, labels)); got > maxTableColumns {
-		t.Errorf("tableColumns() returned %d columns, want at most %d", got, maxTableColumns)
+	want := []string{"id", "Question 0", "Question 1", "Question 2", "Question 3", "Question 4", "Question 5"}
+	if got := pr.tableColumns(flattened, labels); !reflect.DeepEqual(got, want) {
+		t.Errorf("tableColumns() = %v, want %v — the record's own fields first, then answers until the limit", got, want)
 	}
 }
