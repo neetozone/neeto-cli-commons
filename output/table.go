@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func (pr *Printer) printTable(rows []map[string]interface{}, indent int) {
-	cols := pr.pickColumns(rows)
+func (pr *Printer) printTable(rows []map[string]interface{}, answers []string, indent int) {
+	cols := pr.tableColumns(rows, answers)
 	if len(cols) == 0 {
 		pr.printIndentedJSON(rows, indent)
 		return
@@ -202,8 +202,8 @@ func (pr *Printer) orderedKeys(keys []string) []string {
 	return append(ordered, rest...)
 }
 
-func (pr *Printer) tableUninformative(rows []map[string]interface{}) bool {
-	if len(pr.pickColumns(rows)) > 2 {
+func (pr *Printer) tableUninformative(rows []map[string]interface{}, answers []string) bool {
+	if len(pr.tableColumns(rows, answers)) > 2 {
 		return false
 	}
 	for _, row := range rows {
@@ -285,4 +285,114 @@ func anyNonEmptySlice(rows []map[string]interface{}, key string) bool {
 		}
 	}
 	return false
+}
+
+func flattenLabelValues(rows []map[string]interface{}) ([]map[string]interface{}, []string) {
+	keys := labelValueKeys(rows)
+	if len(keys) == 0 {
+		return rows, nil
+	}
+
+	flattened := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		flattened[i] = make(map[string]interface{}, len(row))
+		for k, v := range row {
+			flattened[i][k] = v
+		}
+	}
+
+	reserved := reservedKeys(rows, keys)
+
+	var labels []string
+	seen := map[string]bool{}
+	for _, key := range keys {
+		for i, row := range rows {
+			items, ok := row[key].([]interface{})
+			if !ok {
+				continue
+			}
+			delete(flattened[i], key)
+			for _, item := range items {
+				obj, _ := item.(map[string]interface{})
+				label := responseLabel(obj)
+				if reserved[label] {
+					continue
+				}
+				flattened[i][label] = obj["value"]
+				if !seen[label] {
+					seen[label] = true
+					labels = append(labels, label)
+				}
+			}
+		}
+	}
+
+	return flattened, labels
+}
+
+func reservedKeys(rows []map[string]interface{}, flattenedKeys []string) map[string]bool {
+	flattening := make(map[string]bool, len(flattenedKeys))
+	for _, key := range flattenedKeys {
+		flattening[key] = true
+	}
+
+	reserved := map[string]bool{}
+	for _, row := range rows {
+		for key := range row {
+			if !flattening[key] {
+				reserved[key] = true
+			}
+		}
+	}
+	return reserved
+}
+
+func labelValueKeys(rows []map[string]interface{}) []string {
+	var keys []string
+	seen := map[string]bool{}
+	for _, row := range rows {
+		for key, value := range row {
+			items, ok := value.([]interface{})
+			if seen[key] || !ok || !isLabelValueList(items) {
+				continue
+			}
+			seen[key] = true
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func (pr *Printer) tableColumns(rows []map[string]interface{}, answers []string) []string {
+	if len(answers) == 0 {
+		return pr.pickColumns(rows)
+	}
+
+	cols := pr.pickColumns(withoutKeys(rows, answers))
+	for _, answer := range answers {
+		if len(cols) >= maxTableColumns {
+			break
+		}
+		cols = append(cols, answer)
+	}
+	return cols
+}
+
+func withoutKeys(rows []map[string]interface{}, keys []string) []map[string]interface{} {
+	dropped := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		dropped[key] = true
+	}
+
+	out := make([]map[string]interface{}, len(rows))
+	for i, row := range rows {
+		out[i] = make(map[string]interface{}, len(row))
+		for k, v := range row {
+			if !dropped[k] {
+				out[i][k] = v
+			}
+		}
+	}
+	return out
 }

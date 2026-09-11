@@ -27,8 +27,8 @@ without any handling in the command.
 
 ## Printing
 
-Pick by shape, never by output format — one printer covers the table, `--json`, `--quiet` and
-`--toon`.
+Pick by shape, never by output format — one printer covers the table, `--json`, `--quiet`,
+`--toon` and `--verbose`.
 
 | Call | Use for |
 |---|---|
@@ -46,7 +46,10 @@ Breadcrumbs are the "what to run next" hints printed under a record:
 ```
 
 Columns are chosen from `priority_fields` in `.neeto-cli.yml`, identity first, up to seven
-columns. Add a field there rather than building a table by hand.
+columns. Add a field there rather than building a table by hand. A field holding a list of
+`label`/`value` pairs — a form's answers, say — is spread across one column per label, in the
+order the API returned them. `--verbose` drops the table and expands every field of every
+record instead, so nothing a table leaves out is out of reach.
 
 ## Paging
 
@@ -66,6 +69,7 @@ Keep only the wrappers this repo actually uses in `internal/commands/register.go
 
 ## Global flags
 
-`--subdomain`, `--json`, `--quiet` and `--toon` are added to every command by the shared code. A
+`--subdomain`, `--json`, `--quiet`, `--toon` and `--verbose` are added to every command by the
+shared code. A
 command never declares them and never checks them; using the printers above is what makes them
 work.

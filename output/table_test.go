@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -165,7 +166,7 @@ func TestTableUninformative_OnlyWhenColumnsHideNestedData(t *testing.T) {
 				t.Fatalf("bad sample json: %v", err)
 			}
 			pr, _ := newTestPrinter()
-			if got := pr.tableUninformative(rows); got != tc.want {
+			if got := pr.tableUninformative(rows, nil); got != tc.want {
 				t.Errorf("tableUninformative() = %v, want %v", got, tc.want)
 			}
 		})
@@ -204,7 +205,7 @@ func TestPrintTable_IndentedTableStaysInsideTheTerminal(t *testing.T) {
 	if err := json.Unmarshal([]byte(`[{"name":"`+strings.Repeat("x", 80)+`","note":"`+strings.Repeat("y", 80)+`"}]`), &rows); err != nil {
 		t.Fatalf("bad sample json: %v", err)
 	}
-	pr.printTable(rows, 2)
+	pr.printTable(rows, nil, 2)
 
 	for _, line := range strings.Split(strings.TrimRight(buf.String(), "\n"), "\n") {
 		if !strings.HasPrefix(line, "    ") {
@@ -391,7 +392,7 @@ func TestPickColumns_KeepsAColumnThatIsOnlyEmptyInTheFirstRow(t *testing.T) {
 func TestPrintTable_FallsBackToJSONWhenNoColumnSurvives(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printTable([]map[string]interface{}{{"owner": map[string]interface{}{"name": "Oliver Smith"}}}, 0)
+	pr.printTable([]map[string]interface{}{{"owner": map[string]interface{}{"name": "Oliver Smith"}}}, nil, 0)
 
 	if !strings.Contains(buf.String(), "Oliver Smith") {
 		t.Errorf("printTable with no scalar column should fall back to JSON:\n%s", buf.String())
@@ -467,5 +468,86 @@ func TestFormatValue_DescribesObjectsInsteadOfDumpingThem(t *testing.T) {
 	}
 	if got := formatValue([]interface{}{object, object}); got != "(2 items)" {
 		t.Errorf("formatValue(objects) = %q, want %q", got, "(2 items)")
+	}
+}
+
+func TestTableColumns_AnswersFollowTheOrderTheAPIReturned(t *testing.T) {
+	payload := `[{"id":"s1","created_at":"2026-02-14T11:05:31Z","responses":[
+		{"label":"Full Name","value":"Oliver Smith"},
+		{"label":"Email","value":"oliver@example.com"}]}]`
+
+	var rows []map[string]interface{}
+	if err := json.Unmarshal([]byte(payload), &rows); err != nil {
+		t.Fatalf("bad sample json: %v", err)
+	}
+
+	flattened, answers := flattenLabelValues(rows)
+	pr, _ := newTestPrinter()
+
+	want := []string{"id", "created_at", "Full Name", "Email"}
+	if got := pr.tableColumns(flattened, answers); !reflect.DeepEqual(got, want) {
+		t.Errorf("tableColumns() = %v, want %v", got, want)
+	}
+}
+
+func TestFlattenLabelValues_LeavesOtherListsAlone(t *testing.T) {
+	payload := `[{"id":1,"tags":["a","b"],"line_items":[{"description":"Consulting","hours":10}]}]`
+
+	var rows []map[string]interface{}
+	if err := json.Unmarshal([]byte(payload), &rows); err != nil {
+		t.Fatalf("bad sample json: %v", err)
+	}
+
+	flattened, answers := flattenLabelValues(rows)
+	if len(answers) != 0 {
+		t.Errorf("answers = %v, want none", answers)
+	}
+	if _, ok := flattened[0]["line_items"]; !ok {
+		t.Errorf("a list that is not label/value pairs should survive: %v", flattened[0])
+	}
+}
+
+func TestFlattenLabelValues_KeepsTheRecordsFieldWhenALabelCollides(t *testing.T) {
+	payload := `[{"id":"s1","responses":[{"label":"id","value":"answered"}]},
+		{"responses":[{"label":"id","value":"answered too"}]}]`
+
+	var rows []map[string]interface{}
+	if err := json.Unmarshal([]byte(payload), &rows); err != nil {
+		t.Fatalf("bad sample json: %v", err)
+	}
+
+	flattened, answers := flattenLabelValues(rows)
+	if flattened[0]["id"] != "s1" {
+		t.Errorf("id = %v, want the record's own id to win", flattened[0]["id"])
+	}
+	if len(answers) != 0 {
+		t.Errorf("answers = %v, want a colliding label to claim no column on any row", answers)
+	}
+	if _, ok := flattened[1]["id"]; ok {
+		t.Errorf("row without its own id = %v, want the colliding label left out there too", flattened[1])
+	}
+}
+
+func TestTableColumns_StopsAtTheColumnLimit(t *testing.T) {
+	answers := make([]map[string]string, 0, 10)
+	for i := range 10 {
+		answers = append(answers, map[string]string{"label": fmt.Sprintf("Question %d", i), "value": "x"})
+	}
+	encoded, err := json.Marshal([]map[string]interface{}{{"id": 1, "responses": answers}})
+	if err != nil {
+		t.Fatalf("could not build sample: %v", err)
+	}
+
+	var rows []map[string]interface{}
+	if err := json.Unmarshal(encoded, &rows); err != nil {
+		t.Fatalf("bad sample json: %v", err)
+	}
+
+	flattened, labels := flattenLabelValues(rows)
+	pr, _ := newTestPrinter()
+
+	want := []string{"id", "Question 0", "Question 1", "Question 2", "Question 3", "Question 4", "Question 5"}
+	if got := pr.tableColumns(flattened, labels); !reflect.DeepEqual(got, want) {
+		t.Errorf("tableColumns() = %v, want %v — the record's own fields first, then answers until the limit", got, want)
 	}
 }

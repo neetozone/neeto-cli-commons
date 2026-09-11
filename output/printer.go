@@ -27,6 +27,7 @@ type Printer struct {
 	ForceJSON bool
 	Quiet     bool
 	Toon      bool
+	Verbose   bool
 
 	PriorityFields []string
 
@@ -235,14 +236,15 @@ func (pr *Printer) printPretty(data json.RawMessage) {
 			_, _ = fmt.Fprintln(pr.w(), "No records found.")
 			return
 		}
-		if pr.tableUninformative(rows) {
+		flattened, answers := flattenLabelValues(rows)
+		if pr.Verbose || pr.tableUninformative(flattened, answers) {
 			var raws []json.RawMessage
 			if err := json.Unmarshal(data, &raws); err == nil && len(raws) == len(rows) {
 				pr.printRecordBlocks(raws, rows)
 				return
 			}
 		}
-		pr.printTable(rows, 0)
+		pr.printTable(flattened, answers, 0)
 		return
 	}
 

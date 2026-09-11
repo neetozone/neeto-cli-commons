@@ -86,7 +86,7 @@ func skipInCatalog(cmd *cobra.Command) bool {
 
 func skipFlagInCatalog(f *pflag.Flag) bool {
 	switch f.Name {
-	case "help", "json", "quiet", "toon", "subdomain":
+	case "help", "json", "quiet", "toon", "verbose", "subdomain":
 		return true
 	}
 	return f.Hidden
