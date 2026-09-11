@@ -149,8 +149,9 @@ func TestPrintPretty_NestedArrayURLIsNotHidden(t *testing.T) {
 	}
 }
 
-func TestPrintPretty_RecordBlocksReplaceAnUninformativeTable(t *testing.T) {
+func TestPrintPretty_VerboseReplacesTheTableWithRecordBlocks(t *testing.T) {
 	pr, buf := newTestPrinter()
+	pr.Verbose = true
 
 	pr.printPretty(json.RawMessage(`[{
 		"id": "3ad844c3-2785-4ddf-87a4-b48195fc6360",
@@ -185,6 +186,33 @@ func TestPrintPretty_RecordBlocksReplaceAnUninformativeTable(t *testing.T) {
 	}
 	if strings.Contains(out, "─") {
 		t.Errorf("record blocks must not draw a table separator:\n%s", out)
+	}
+}
+
+func TestPrintPretty_AnswersBecomeColumnsInsteadOfRecordBlocks(t *testing.T) {
+	pr, buf := newTestPrinter()
+
+	pr.printPretty(json.RawMessage(`[{
+		"id": "3ad844c3-2785-4ddf-87a4-b48195fc6360",
+		"created_at": "2026-02-09T05:20:59.464Z",
+		"user_agent": {"name":"Chrome","operating_system":"macOS","ip_address":"1.2.3.4"},
+		"responses": [
+			{"id":"r1","label":"Email","kind":"email","value":"foo@bar.com"},
+			{"id":"r2","label":"Full Name","kind":"text","value":"John Doe"}
+		]
+	}]`))
+
+	out := buf.String()
+	if !strings.Contains(out, "─") {
+		t.Errorf("an answered form should render as a table:\n%s", out)
+	}
+	for _, want := range []string{"EMAIL", "FULL NAME", "foo@bar.com", "John Doe"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("table is missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "RESPONSES") {
+		t.Errorf("the answer list should be spread across columns, not kept as one:\n%s", out)
 	}
 }
 

@@ -76,9 +76,11 @@ func (a *App) newRootCommand() *cobra.Command {
 			jsonFlag, _ := cmd.Flags().GetBool("json")
 			quietFlag, _ := cmd.Flags().GetBool("quiet")
 			toonFlag, _ := cmd.Flags().GetBool("toon")
+			verboseFlag, _ := cmd.Flags().GetBool("verbose")
 			a.Printer.ForceJSON = jsonFlag
 			a.Printer.Quiet = quietFlag
 			a.Printer.Toon = toonFlag
+			a.Printer.Verbose = verboseFlag
 			if a.PreRun != nil {
 				return a.PreRun(cmd, args)
 			}
@@ -89,6 +91,7 @@ func (a *App) newRootCommand() *cobra.Command {
 	root.PersistentFlags().Bool("json", false, "Output as JSON")
 	root.PersistentFlags().Bool("quiet", false, "Output raw data only (no envelope)")
 	root.PersistentFlags().Bool("toon", false, "Output in TOON format (token-optimized for AI agents)")
+	root.PersistentFlags().Bool("verbose", false, "Expand every field of a record instead of a table")
 	if a.Auth.RequiresSubdomain() {
 		root.PersistentFlags().String("subdomain", "", "Override saved subdomain")
 	}

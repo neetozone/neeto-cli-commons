@@ -70,7 +70,7 @@ These are what keep the eleven neeto CLIs looking like one product. Follow them.
   the description published on the docs site.
 - A confirmation reads `Widget deleted.`, never `Widget deleted successfully.`
 - Never call `fmt.Print` in a command. Use `printList`, `printResource`, `printActionResult` or
-  `printMessage`, or `--json`, `--quiet` and `--toon` will not work.
+  `printMessage`, or `--json`, `--quiet`, `--toon` and `--verbose` will not work.
 - Mark a required flag with `markFlagsRequired`. Do not write `(required)` into the flag's
   description — it is added when help is rendered and left out of the machine-readable catalog.
 - A flag that reads a payload from a file is `--json-file`.

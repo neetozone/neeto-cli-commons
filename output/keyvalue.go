@@ -118,7 +118,7 @@ func (pr *Printer) expand(f field, depth int) {
 func (pr *Printer) printArray(data json.RawMessage, depth int) {
 	var rows []map[string]interface{}
 	if err := json.Unmarshal(data, &rows); err == nil && len(rows) > 0 {
-		pr.printTable(rows, depth)
+		pr.printTable(rows, nil, depth)
 		return
 	}
 	pr.printIndentedJSON(data, depth)

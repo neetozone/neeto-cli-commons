@@ -332,6 +332,7 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 		name       string
 		data       string
 		pagination string
+		verbose    bool
 		want       string
 	}{
 		{
@@ -347,10 +348,21 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 				"\n  Show details: neetocal meetings show <sid>\n",
 		},
 		{
-			name: "nested list falls back to record blocks",
+			name: "answers become columns",
 			data: `[{"id":1,"title":"Contact form","owner":{"name":"Oliver Smith","email":"o@example.com"},
 				"settings":{"public":true,"limits":{"per_day":10,"per_month":100}},
 				"responses":[{"label":"Name","value":"Sam"},{"label":"Email","value":"sam@example.com"}]}]`,
+			want: "ID   TITLE          NAME   EMAIL\n" +
+				"──   ────────────   ────   ───────────────\n" +
+				"1    Contact form   Sam    sam@example.com\n" +
+				"\n  Show details: neetocal meetings show <sid>\n",
+		},
+		{
+			name: "verbose expands every field of every record",
+			data: `[{"id":1,"title":"Contact form","owner":{"name":"Oliver Smith","email":"o@example.com"},
+				"settings":{"public":true,"limits":{"per_day":10,"per_month":100}},
+				"responses":[{"label":"Name","value":"Sam"},{"label":"Email","value":"sam@example.com"}]}]`,
+			verbose: true,
 			want: "  ID     1\n" +
 				"  TITLE  Contact form\n" +
 				"  OWNER\n" +
@@ -364,6 +376,16 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 				"    LIMITS\n" +
 				"      PER DAY    10\n" +
 				"      PER MONTH  100\n" +
+				"\n  Show details: neetocal meetings show <sid>\n",
+		},
+		{
+			name: "a list a table cannot describe still falls back to record blocks",
+			data: `[{"id":1,"title":"Contact form","owner":{"name":"Oliver Smith","email":"o@example.com"}}]`,
+			want: "  ID     1\n" +
+				"  TITLE  Contact form\n" +
+				"  OWNER\n" +
+				"    NAME   Oliver Smith\n" +
+				"    EMAIL  o@example.com\n" +
 				"\n  Show details: neetocal meetings show <sid>\n",
 		},
 		{
@@ -430,6 +452,7 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			pr, buf := newPrettyPrinter()
+			pr.Verbose = tc.verbose
 
 			var pagination json.RawMessage
 			if tc.pagination != "" {
