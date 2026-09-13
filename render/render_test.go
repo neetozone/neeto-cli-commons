@@ -151,7 +151,7 @@ func TestReadmeReleaseDescribesThePushToMain(t *testing.T) {
 	if strings.Contains(body, "bump PR") {
 		t.Error("release section still claims the pipeline opens a bump PR")
 	}
-	if !strings.Contains(body, "pushes the version bump commit\nstraight to `main`") {
+	if !strings.Contains(body, "* Pushes the version bump commit to `main`") {
 		t.Error("release section does not describe the push to main")
 	}
 }
