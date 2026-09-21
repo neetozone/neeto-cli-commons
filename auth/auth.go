@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -74,6 +75,11 @@ func (a *Auth) LoginURL(subdomain, loginToken string) string {
 func (a *Auth) Login(subdomain string) (*Credentials, error) {
 	if !a.RequiresSubdomain() {
 		subdomain = ""
+	}
+	if subdomain != "" && !subdomainLabel.MatchString(subdomain) {
+		return nil, fmt.Errorf(
+			"%q is not a valid subdomain. Enter only the workspace name: if your %s URL is acme.%s then enter 'acme'.",
+			subdomain, a.product.PrettyName, a.product.Domain)
 	}
 	baseURL := a.BaseURL(subdomain)
 
@@ -226,8 +232,49 @@ func redirectedAway(requestedURL string, resp *http.Response) bool {
 	return resp.Request.URL.Host != requested.Host
 }
 
+// A workspace subdomain is one DNS label. Anything else is refused rather than
+// interpolated, because "evil.example#" pasted into https://%s.%s makes
+// evil.example the host that receives the login exchange.
+var subdomainLabel = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
+
 func (a *Auth) baseURLOverride() string {
-	return strings.TrimRight(os.Getenv(a.product.BaseURLEnvVar()), "/")
+	envVar := a.product.BaseURLEnvVar()
+	raw := strings.TrimRight(os.Getenv(envVar), "/")
+	if raw == "" {
+		return ""
+	}
+	if err := checkOverride(raw); err != nil {
+		fmt.Fprintf(os.Stderr, "Ignoring %s: %v\n", envVar, err)
+		return ""
+	}
+	// This variable redirects every request, including the ones that carry the
+	// stored session token, so say out loud where the credentials are going.
+	fmt.Fprintf(os.Stderr,
+		"Warning: %s is set, so %s will send your credentials to %s instead of %s.\n",
+		envVar, a.product.BinaryName, raw, a.product.Domain)
+	return raw
+}
+
+func checkOverride(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("%q is not a valid base URL", raw)
+	}
+	if u.Scheme == "https" || (u.Scheme == "http" && isLoopback(u.Hostname())) {
+		return nil
+	}
+	return fmt.Errorf("%q must use https; http is accepted only for localhost", raw)
+}
+
+// Names that reach the developer's own machine. lvh.me is third-party DNS that
+// resolves to 127.0.0.1, and every neeto product's dev setup points at it, so
+// refusing it would only push people to unset the check entirely.
+func isLoopback(host string) bool {
+	switch host {
+	case "localhost", "127.0.0.1", "::1", "lvh.me":
+		return true
+	}
+	return strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".lvh.me")
 }
 
 func (a *Auth) out() io.Writer {
