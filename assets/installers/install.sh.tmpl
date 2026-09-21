@@ -42,10 +42,10 @@ TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT INT TERM
 
 echo "Downloading {{.PrettyName}} CLI for ${OS}/${ARCH}..."
-curl -fsSL "$URL" -o "${TMPDIR}/${ARCHIVE}"
+curl -fsSL --proto '=https' --proto-redir '=https' "$URL" -o "${TMPDIR}/${ARCHIVE}"
 
 echo "Verifying checksum..."
-curl -fsSL "${BASE_URL}/SHA256SUMS" -o "${TMPDIR}/SHA256SUMS"
+curl -fsSL --proto '=https' --proto-redir '=https' "${BASE_URL}/SHA256SUMS" -o "${TMPDIR}/SHA256SUMS"
 EXPECTED=$(awk -v name="$ARCHIVE" '{ file = $2; sub(/^\*/, "", file); if (file == name) print $1 }' "${TMPDIR}/SHA256SUMS" | tr 'A-F' 'a-f')
 if [ -z "$EXPECTED" ]; then
   echo "No published checksum for ${ARCHIVE}. Aborting." >&2
@@ -67,26 +67,36 @@ echo "Extracting..."
 tar -xzf "${TMPDIR}/${ARCHIVE}" -C "$TMPDIR"
 
 echo "Installing to ${INSTALL_DIR}..."
+
+# sudo is offered only for the default directory. A custom {{.InstallDirEnvVar}}
+# is the caller's own choice, so it must be somewhere they can already write:
+# escalating for it would turn one environment variable into a root-owned
+# executable anywhere on the system, /etc/cron.daily included.
+may_sudo() {
+  [ "$INSTALL_DIR" = /usr/local/bin ] && command -v sudo >/dev/null 2>&1
+}
+cannot_write() {
+  echo "Cannot write to ${INSTALL_DIR}." >&2
+  echo "Set {{.InstallDirEnvVar}} to a directory you own and run this script again." >&2
+  exit 1
+}
+
 if [ ! -d "$INSTALL_DIR" ] && ! mkdir -p "$INSTALL_DIR" 2>/dev/null; then
-  if command -v sudo >/dev/null 2>&1; then
+  if may_sudo; then
     echo "${INSTALL_DIR} does not exist and cannot be created without sudo."
     sudo mkdir -p "$INSTALL_DIR"
   else
-    echo "Cannot create ${INSTALL_DIR} and sudo is not available." >&2
-    echo "Set {{.InstallDirEnvVar}} to a directory you own and run this script again." >&2
-    exit 1
+    cannot_write
   fi
 fi
 if [ -w "$INSTALL_DIR" ]; then
   install -m 0755 "${TMPDIR}/{{.BinaryName}}" "${INSTALL_DIR}/{{.BinaryName}}"
-elif command -v sudo >/dev/null 2>&1; then
+elif may_sudo; then
   echo "${INSTALL_DIR} is not writable, so sudo is needed."
   echo "Set {{.InstallDirEnvVar}} to a directory you own to install without sudo."
   sudo install -m 0755 "${TMPDIR}/{{.BinaryName}}" "${INSTALL_DIR}/{{.BinaryName}}"
 else
-  echo "Cannot write to ${INSTALL_DIR} and sudo is not available." >&2
-  echo "Set {{.InstallDirEnvVar}} to a directory you own and run this script again." >&2
-  exit 1
+  cannot_write
 fi
 
 case ":${PATH}:" in
