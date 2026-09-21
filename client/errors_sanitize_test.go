@@ -44,6 +44,22 @@ func TestParseAPIErrorStripsEscapesFromDetails(t *testing.T) {
 	}
 }
 
+// A detail that is nothing but escapes must be dropped, not rendered as a
+// bullet with no text after it.
+func TestParseAPIErrorDropsDetailsThatSanitizeToEmpty(t *testing.T) {
+	body := []byte(`{"errors":["real failure","\u001b[2K","  "],` +
+		`"field_errors":[{"field":"","message":"\u001b[31m"}]}`)
+
+	apiErr := parseAPIError(422, body, errorOptions{})
+
+	if len(apiErr.Errors) != 0 {
+		t.Errorf("Errors = %q, want the escape-only details dropped", apiErr.Errors)
+	}
+	if strings.Contains(apiErr.Error(), "\n  - \n") || strings.HasSuffix(apiErr.Error(), "\n  - ") {
+		t.Errorf("Error() rendered an empty bullet: %q", apiErr.Error())
+	}
+}
+
 // A message that is nothing but escapes must fall back to the status text
 // rather than print as an empty error.
 func TestParseAPIErrorFallsBackWhenMessageSanitizesToEmpty(t *testing.T) {

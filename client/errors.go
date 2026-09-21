@@ -62,9 +62,15 @@ func parseAPIError(statusCode int, body []byte, opts errorOptions) *APIError {
 
 	// The error path never reaches the printer, so sanitize at parse.
 	apiErr.Message = output.SanitizeControlChars(apiErr.Message)
-	for i := range apiErr.Errors {
-		apiErr.Errors[i] = output.SanitizeControlChars(apiErr.Errors[i])
+	// A detail that is nothing but escapes would print as a bare bullet, so
+	// drop it rather than pad the list with blank lines.
+	details := make([]string, 0, len(apiErr.Errors))
+	for _, detail := range apiErr.Errors {
+		if detail = output.SanitizeControlChars(detail); detail != "" {
+			details = append(details, detail)
+		}
 	}
+	apiErr.Errors = details
 
 	if apiErr.Message == "" {
 		apiErr.Message = statusText(statusCode)
