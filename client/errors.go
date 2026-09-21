@@ -3,6 +3,8 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/neetozone/neeto-cli-commons/output"
 )
 
 type APIError struct {
@@ -56,6 +58,12 @@ func parseAPIError(statusCode int, body []byte, opts errorOptions) *APIError {
 			}
 			apiErr.Errors = append(apiErr.Errors, detail)
 		}
+	}
+
+	// The error path never reaches the printer, so sanitize at parse.
+	apiErr.Message = output.SanitizeControlChars(apiErr.Message)
+	for i := range apiErr.Errors {
+		apiErr.Errors[i] = output.SanitizeControlChars(apiErr.Errors[i])
 	}
 
 	if apiErr.Message == "" {

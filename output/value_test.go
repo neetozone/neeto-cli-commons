@@ -194,8 +194,8 @@ func TestSanitizeControlChars(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := sanitizeControlChars(tc.in); got != tc.want {
-				t.Errorf("sanitizeControlChars(%q) = %q, want %q", tc.in, got, tc.want)
+			if got := SanitizeControlChars(tc.in); got != tc.want {
+				t.Errorf("SanitizeControlChars(%q) = %q, want %q", tc.in, got, tc.want)
 			}
 		})
 	}
