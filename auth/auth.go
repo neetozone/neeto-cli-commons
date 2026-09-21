@@ -26,6 +26,7 @@ type Auth struct {
 	product config.Product
 
 	Out          io.Writer
+	Err          io.Writer
 	OpenBrowser  func(string) error
 	HTTPClient   *http.Client
 	PollInterval time.Duration
@@ -36,6 +37,7 @@ func New(p config.Product) *Auth {
 	return &Auth{
 		product:      p,
 		Out:          os.Stdout,
+		Err:          os.Stderr,
 		OpenBrowser:  browser.OpenURL,
 		HTTPClient:   http.DefaultClient,
 		PollInterval: defaultPollInterval,
@@ -233,12 +235,12 @@ func (a *Auth) baseURLOverride() string {
 		return ""
 	}
 	if err := checkOverride(raw); err != nil {
-		fmt.Fprintf(os.Stderr, "Ignoring %s: %v\n", envVar, err)
+		_, _ = fmt.Fprintf(a.errw(), "Ignoring %s: %v\n", envVar, err)
 		return ""
 	}
 	// This variable redirects every request, including the ones that carry the
 	// stored session token, so say out loud where the credentials are going.
-	fmt.Fprintf(os.Stderr,
+	_, _ = fmt.Fprintf(a.errw(),
 		"Warning: %s is set, so %s will send your credentials to %s instead of %s.\n",
 		envVar, a.product.BinaryName, raw, a.product.Domain)
 	return raw
@@ -271,6 +273,15 @@ func (a *Auth) out() io.Writer {
 		return os.Stdout
 	}
 	return a.Out
+}
+
+// Warnings stay off Out so they never land in the middle of the machine-readable
+// stream a script is parsing.
+func (a *Auth) errw() io.Writer {
+	if a.Err == nil {
+		return os.Stderr
+	}
+	return a.Err
 }
 
 func (a *Auth) openBrowser(rawURL string) error {
