@@ -227,7 +227,43 @@ func redirectedAway(requestedURL string, resp *http.Response) bool {
 }
 
 func (a *Auth) baseURLOverride() string {
-	return strings.TrimRight(os.Getenv(a.product.BaseURLEnvVar()), "/")
+	envVar := a.product.BaseURLEnvVar()
+	raw := strings.TrimRight(os.Getenv(envVar), "/")
+	if raw == "" {
+		return ""
+	}
+	if err := checkOverride(raw); err != nil {
+		fmt.Fprintf(os.Stderr, "Ignoring %s: %v\n", envVar, err)
+		return ""
+	}
+	// This variable redirects every request, including the ones that carry the
+	// stored session token, so say out loud where the credentials are going.
+	fmt.Fprintf(os.Stderr,
+		"Warning: %s is set, so %s will send your credentials to %s instead of %s.\n",
+		envVar, a.product.BinaryName, raw, a.product.Domain)
+	return raw
+}
+
+func checkOverride(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return fmt.Errorf("%q is not a valid base URL", raw)
+	}
+	if u.Scheme == "https" || (u.Scheme == "http" && isLoopback(u.Hostname())) {
+		return nil
+	}
+	return fmt.Errorf("%q must use https; http is accepted only for localhost", raw)
+}
+
+// Names that reach the developer's own machine. lvh.me is third-party DNS that
+// resolves to 127.0.0.1, and every neeto product's dev setup points at it, so
+// refusing it would only push people to unset the check entirely.
+func isLoopback(host string) bool {
+	switch host {
+	case "localhost", "127.0.0.1", "::1", "lvh.me":
+		return true
+	}
+	return strings.HasSuffix(host, ".localhost") || strings.HasSuffix(host, ".lvh.me")
 }
 
 func (a *Auth) out() io.Writer {
