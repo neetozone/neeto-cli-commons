@@ -83,7 +83,7 @@ func formatValue(v interface{}) string {
 		}
 		return fmt.Sprintf("%.2f", val)
 	case string:
-		return sanitizeControlChars(val)
+		return SanitizeControlChars(val)
 	case []interface{}:
 		if len(val) == 0 {
 			return "-"
@@ -99,13 +99,15 @@ func formatValue(v interface{}) string {
 	case map[string]interface{}:
 		return "(" + describeValue(val) + ")"
 	default:
-		return sanitizeControlChars(fmt.Sprintf("%v", val))
+		return SanitizeControlChars(fmt.Sprintf("%v", val))
 	}
 }
 
 var ansiEscapeSequence = regexp.MustCompile("\x1b\\[[0-9;?]*[ -/]*[@-~]|\x1b\\][^\x07\x1b]*(?:\x07|\x1b\\\\)|\x1b[@-Z\\\\-_]")
 
-func sanitizeControlChars(s string) string {
+// SanitizeControlChars strips escapes so the server cannot repaint output it
+// has already sent, nor reach the clipboard through OSC 52.
+func SanitizeControlChars(s string) string {
 	s = ansiEscapeSequence.ReplaceAllString(s, "")
 
 	var b strings.Builder
