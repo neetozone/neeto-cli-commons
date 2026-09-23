@@ -20,7 +20,7 @@ builds:
       - -X github.com/neetozone/neeto-cli-commons/gen/version.Date={{.Date}}
 
 archives:
-  - formats: [tar.gz]
+  - format: tar.gz
     name_template: "neeto-cli-gen_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 release:
