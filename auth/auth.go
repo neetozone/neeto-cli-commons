@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -71,9 +72,19 @@ func (a *Auth) LoginURL(subdomain, loginToken string) string {
 	return fmt.Sprintf("%s/admin/cli/login?token=%s", host, token)
 }
 
+// A workspace subdomain is one DNS label. Anything else is refused rather than
+// interpolated, because "evil.example#" pasted into https://%s.%s makes
+// evil.example the host that receives the login exchange.
+var subdomainLabel = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$`)
+
 func (a *Auth) Login(subdomain string) (*Credentials, error) {
 	if !a.RequiresSubdomain() {
 		subdomain = ""
+	}
+	if subdomain != "" && !subdomainLabel.MatchString(subdomain) {
+		return nil, fmt.Errorf(
+			"%q is not a valid subdomain. Enter only the workspace name: if your %s URL is acme.%s then enter 'acme'.",
+			subdomain, a.product.PrettyName, a.product.Domain)
 	}
 	baseURL := a.BaseURL(subdomain)
 
