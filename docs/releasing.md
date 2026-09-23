@@ -8,11 +8,14 @@ with no version label does nothing.
 script:
 
 1. Reads the version label off the last merged pull request. No label, no release.
-2. Bumps `VERSION` accordingly, commits it as `Bump version to X.Y.Z` and pushes
-   to `main`. That commit is skipped on the next run, so the pipeline cannot loop.
-3. Tags the commit `vX.Y.Z` and pushes the tag.
-4. Publishes the `neeto-cli-gen` binaries for that tag.
-5. Runs `.scripts/bump.sh vX.Y.Z`.
+2. Works out the next version from `VERSION` or the latest `v*` tag, whichever is
+   higher, so a bump pull request that has not merged yet cannot cause a repeat.
+3. Tags the released commit `vX.Y.Z` and pushes the tag.
+4. Opens a `Bump version to X.Y.Z` pull request that updates `VERSION`, labelled
+   `mergepr` and nothing else. `main` only takes changes through pull requests.
+   When it merges, the pipeline sees the bump commit and skips, so it cannot loop.
+5. Publishes the `neeto-cli-gen` binaries for that tag.
+6. Runs `.scripts/bump.sh vX.Y.Z`.
 
 ## The fan-out
 
@@ -68,6 +71,6 @@ and arm64 plus a checksums file. `go install` keeps working as before; the
 binaries are for anyone who would rather not build it.
 
 If goreleaser fails, the run says so and carries on to the product roll-out,
-then exits non-zero. The tag and the version bump are already pushed at that
-point, so re-run `goreleaser release --clean` against the tag rather than
+then exits non-zero. The tag is already pushed and the version bump pull request
+is open at that point, so re-run `goreleaser release --clean` against the tag rather than
 re-running the whole pipeline.

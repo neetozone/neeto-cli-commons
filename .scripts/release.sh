@@ -47,8 +47,10 @@ if [ -z "$VERSION_LABEL" ]; then
   exit 0
 fi
 
-CURRENT_VERSION=$(tr -d '[:space:]' < VERSION)
-CURRENT_VERSION=${CURRENT_VERSION#v}
+git fetch --quiet --tags origin
+FILE_VERSION=$(tr -d '[:space:]' < VERSION)
+LATEST_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+CURRENT_VERSION=$(printf '%s\n%s\n' "${FILE_VERSION#v}" "${LATEST_TAG#v}" | sort -V | tail -n 1)
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
 case "$VERSION_LABEL" in
@@ -69,11 +71,6 @@ git fetch origin main
 git checkout main
 git pull --ff-only origin main
 
-echo "$VERSION" > VERSION
-git add VERSION
-git commit -m "Bump version to $VERSION"
-git push origin HEAD:main
-
 if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
   echo "Tag v${VERSION} already exists. Skipping tag creation."
 else
@@ -82,12 +79,27 @@ else
   echo "Pushed tag v${VERSION}"
 fi
 
+BUMP_BRANCH="bump-version-to-${VERSION}"
+if [ -n "$(gh pr list --head "$BUMP_BRANCH" --state open --json number --jq '.[].number')" ]; then
+  echo "A pull request bumping VERSION to ${VERSION} is already open."
+else
+  git checkout -B "$BUMP_BRANCH"
+  echo "$VERSION" > VERSION
+  git add VERSION
+  git commit -m "Bump version to $VERSION"
+  git push --force origin "$BUMP_BRANCH"
+  gh pr create --base main --head "$BUMP_BRANCH" --label mergepr \
+    --title "Bump version to $VERSION" \
+    --body "Records v${VERSION} in VERSION after the release. main only takes changes through pull requests, so the release pipeline raises the bump here and mergepr merges it once CI passes."
+  git checkout main
+fi
+
 RELEASE_STATUS=0
 
 echo "Publishing the neeto-cli-gen binaries for v${VERSION}..."
 export GORELEASER_CURRENT_TAG="v${VERSION}"
 if ! goreleaser release --clean; then
-  echo "goreleaser failed. The tag and the version bump are already pushed, so any product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
+  echo "goreleaser failed. The tag is already pushed and the version bump pull request is open, so any product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
   RELEASE_STATUS=1
 fi
 
