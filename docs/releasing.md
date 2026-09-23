@@ -37,19 +37,19 @@ is reported as "not ported yet" and fails the run rather than passing quietly.
 Each product's own version is bumped by its own release pipeline, not here. The
 `patch` label on the pull request bump.sh opens is what does it: when that PR is
 merged, the product's `.neetoci/release.yml` bumps its `VERSION`, tags it, builds
-the binaries and uploads them. So one labelled merge here ends with eleven
+the binaries and uploads them. So one labelled merge here ends with thirteen
 released CLIs, each with its own patch bump.
 
-Reviewing and merging those eleven pull requests is the only manual step.
+Reviewing and merging those thirteen pull requests is the only manual step.
 
 ## First time through
 
 The fan-out needs every product already ported to this module. Until that has
 happened, merge into `main` here **without** a version label: an unlabelled
-merge releases nothing. Once this module and all eleven product pull requests
+merge releases nothing. Once this module and all thirteen product pull requests
 are on `main`, the next labelled merge cuts the first real release and rolls it
 out. A repo that is not ported yet fails the run rather than being skipped
-quietly, so a premature labelled merge produces eleven noisy failures after the
+quietly, so a premature labelled merge produces thirteen noisy failures after the
 tag has already been pushed.
 
 ## Running the fan-out by hand
