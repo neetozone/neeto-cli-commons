@@ -103,6 +103,11 @@ for repo in $PRODUCTS; do
       exit 0
     fi
 
+    if ! gh label list --repo "${ORG}/${repo}" --search mergepr --json name --jq '.[].name' | grep -qx mergepr; then
+      gh label create mergepr --repo "${ORG}/${repo}" --color d7e8e5 \
+        --description "Upon successful completion of the CI, merge the PR."
+    fi
+
     gh pr create \
       --repo "${ORG}/${repo}" \
       --base main \

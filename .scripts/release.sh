@@ -79,27 +79,12 @@ else
   echo "Pushed tag v${VERSION}"
 fi
 
-BUMP_BRANCH="bump-version-to-${VERSION}"
-if [ -n "$(gh pr list --head "$BUMP_BRANCH" --state open --json number --jq '.[].number')" ]; then
-  echo "A pull request bumping VERSION to ${VERSION} is already open."
-else
-  git checkout -B "$BUMP_BRANCH"
-  echo "$VERSION" > VERSION
-  git add VERSION
-  git commit -m "Bump version to $VERSION"
-  git push --force origin "$BUMP_BRANCH"
-  gh pr create --base main --head "$BUMP_BRANCH" --label mergepr \
-    --title "Bump version to $VERSION" \
-    --body "Records v${VERSION} in VERSION after the release. main only takes changes through pull requests, so the release pipeline raises the bump here and mergepr merges it once CI passes."
-  git checkout main
-fi
-
 RELEASE_STATUS=0
 
 echo "Publishing the neeto-cli-gen binaries for v${VERSION}..."
 export GORELEASER_CURRENT_TAG="v${VERSION}"
 if ! goreleaser release --clean; then
-  echo "goreleaser failed. The tag is already pushed and the version bump pull request is open, so any product roll-out below still runs; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
+  echo "goreleaser failed. The tag is already pushed, so the product roll-out and the version bump pull request below still run; re-run goreleaser against v${VERSION} once the cause is fixed." >&2
   RELEASE_STATUS=1
 fi
 
@@ -112,6 +97,20 @@ if [ "$VERSION_LABEL" = "major" ]; then
 else
   echo "Opening the version-bump pull requests on every product CLI..."
   bash .scripts/bump.sh "v${VERSION}"
+fi
+
+BUMP_BRANCH="bump-version-to-${VERSION}"
+if [ -n "$(gh pr list --head "$BUMP_BRANCH" --state open --json number --jq '.[].number')" ]; then
+  echo "A pull request bumping VERSION to ${VERSION} is already open."
+else
+  git checkout -B "$BUMP_BRANCH"
+  echo "$VERSION" > VERSION
+  git add VERSION
+  git commit -m "Bump version to $VERSION"
+  git push --force origin "$BUMP_BRANCH"
+  gh pr create --base main --head "$BUMP_BRANCH" --label instant-mergepr \
+    --title "Bump version to $VERSION" \
+    --body "Records v${VERSION} in VERSION after the release. main only takes changes through pull requests, so the release pipeline raises the bump here and instant-mergepr merges it once CI passes."
 fi
 
 exit "$RELEASE_STATUS"
