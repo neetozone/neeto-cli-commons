@@ -42,6 +42,7 @@ func newTestAuth(t *testing.T, p config.Product) *Auth {
 	t.Helper()
 	a := New(p)
 	a.Out = io.Discard
+	a.Err = io.Discard
 	a.OpenBrowser = func(string) error { return nil }
 	a.PollInterval = time.Millisecond
 	a.PollTimeout = 10 * time.Second
@@ -60,7 +61,7 @@ func TestBaseURL_Subdomain_Default(t *testing.T) {
 func TestBaseURL_Subdomain_Override(t *testing.T) {
 	t.Setenv("NEETODESK_BASE_URL", "http://acme.lvh.me:8980")
 
-	got := New(subdomainProduct()).BaseURL("acme")
+	got := newTestAuth(t, subdomainProduct()).BaseURL("acme")
 	if want := "http://acme.lvh.me:8980"; got != want {
 		t.Errorf("BaseURL(\"acme\") = %q, want %q", got, want)
 	}
@@ -69,7 +70,7 @@ func TestBaseURL_Subdomain_Override(t *testing.T) {
 func TestBaseURL_Subdomain_OverrideStripsTrailingSlash(t *testing.T) {
 	t.Setenv("NEETODESK_BASE_URL", "http://acme.lvh.me:8980/")
 
-	got := New(subdomainProduct()).BaseURL("acme")
+	got := newTestAuth(t, subdomainProduct()).BaseURL("acme")
 	if want := "http://acme.lvh.me:8980"; got != want {
 		t.Errorf("BaseURL(\"acme\") = %q, want %q", got, want)
 	}
@@ -90,7 +91,7 @@ func TestBaseURL_SingleHost_IgnoresSubdomain(t *testing.T) {
 func TestBaseURL_SingleHost_Override(t *testing.T) {
 	t.Setenv("NEETODEPLOY_BASE_URL", "http://app.lvh.me:9029/")
 
-	got := New(singleHostProduct()).BaseURL("")
+	got := newTestAuth(t, singleHostProduct()).BaseURL("")
 	if want := "http://app.lvh.me:9029"; got != want {
 		t.Errorf("BaseURL(\"\") = %q, want %q", got, want)
 	}
@@ -128,7 +129,7 @@ func TestLoginURL_SingleHost_UsesLoginHost(t *testing.T) {
 func TestLoginURL_SingleHost_Override(t *testing.T) {
 	t.Setenv("NEETODEPLOY_BASE_URL", "http://app.lvh.me:9029")
 
-	got := New(singleHostProduct()).LoginURL("", "tok123")
+	got := newTestAuth(t, singleHostProduct()).LoginURL("", "tok123")
 	want := "http://app.lvh.me:9029/admin/cli/login?token=tok123"
 	if got != want {
 		t.Errorf("LoginURL = %q, want %q", got, want)
