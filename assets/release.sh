@@ -59,7 +59,10 @@ if [ -z "$VERSION_LABEL" ]; then
   exit 0
 fi
 
-CURRENT_VERSION=$(tr -d '[:space:]' < VERSION)
+git fetch --quiet --tags origin
+FILE_VERSION=$(tr -d '[:space:]' < VERSION)
+LATEST_TAG=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+CURRENT_VERSION=$(printf '%s\n%s\n' "${FILE_VERSION#v}" "${LATEST_TAG#v}" | sort -V | tail -n 1)
 IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
 case "$VERSION_LABEL" in
@@ -182,11 +185,17 @@ printf '%s\n' "$EXISTING" | while read -r key; do
 done
 echo "S3 upload complete."
 
-git fetch origin main
-git checkout main
-git pull --ff-only origin main
-echo "$VERSION" > VERSION
-git add VERSION
-git commit -m "Bump version to $VERSION"
-git push origin main
-echo "VERSION file pushed to main: $CURRENT_VERSION -> $VERSION"
+BUMP_BRANCH="bump-version-to-${VERSION}"
+if [ -n "$(gh pr list --head "$BUMP_BRANCH" --state open --json number --jq '.[].number')" ]; then
+  echo "A pull request bumping VERSION to ${VERSION} is already open."
+else
+  git fetch origin main
+  git checkout -B "$BUMP_BRANCH" origin/main
+  echo "$VERSION" > VERSION
+  git add VERSION
+  git commit -m "Bump version to $VERSION"
+  git push --force origin "$BUMP_BRANCH"
+  gh pr create --base main --head "$BUMP_BRANCH" --label instant-mergepr \
+    --title "Bump version to $VERSION" \
+    --body "Records v${VERSION} in VERSION after the release. main only takes changes through pull requests, so the release pipeline raises the bump here and instant-mergepr merges it once CI passes."
+fi
