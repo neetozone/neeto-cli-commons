@@ -25,6 +25,8 @@ type App struct {
 	Plugin  *plugin.Plugin
 	Build   BuildInfo
 
+	latestVersionURL string
+
 	PreRun func(cmd *cobra.Command, args []string) error
 
 	FormatError func(cmd *cobra.Command, err error) string
@@ -41,6 +43,8 @@ func New(p config.Product) *App {
 		Auth:    auth.New(p),
 		Plugin:  plugin.New(p),
 		Build:   BuildInfo{Version: "dev", Commit: "none", Date: "unknown"},
+
+		latestVersionURL: p.LatestURL() + "/VERSION",
 	}
 	a.root = a.newRootCommand()
 	a.registerCommonCommands()
@@ -81,6 +85,9 @@ func (a *App) newRootCommand() *cobra.Command {
 			a.Printer.Quiet = quietFlag
 			a.Printer.Toon = toonFlag
 			a.Printer.Verbose = verboseFlag
+			if err := a.checkVersion(cmd); err != nil {
+				return err
+			}
 			if a.PreRun != nil {
 				return a.PreRun(cmd, args)
 			}

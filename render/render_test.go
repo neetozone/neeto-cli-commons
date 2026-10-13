@@ -240,6 +240,18 @@ func TestReleaseScriptDigestMatchesSidecar(t *testing.T) {
 	}
 }
 
+func TestReleaseScriptPublishesLatestVersionMarker(t *testing.T) {
+	body := string(render.ReleaseScript())
+	write := `echo "$VERSION" > dist/latest/VERSION`
+	upload := `aws s3 cp dist/latest/ "${S3_BASE}/latest/" --recursive`
+	if !strings.Contains(body, write) {
+		t.Fatalf("release.sh does not write %q", write)
+	}
+	if strings.Index(body, write) > strings.Index(body, upload) {
+		t.Error("release.sh writes latest/VERSION after uploading latest/")
+	}
+}
+
 func TestReleaseScriptCarriesNoProductStrings(t *testing.T) {
 	body := string(render.ReleaseScript())
 	for _, banned := range []string{"NeetoCal", "neetocal", "NeetoDeploy", "neeto-cal-cli", "cli/Neeto"} {

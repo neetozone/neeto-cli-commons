@@ -165,6 +165,7 @@ cp dist/installer-archives/* dist/latest/
 cp "${RENDER_DIR}/installers/install.sh" dist/latest/install.sh
 cp "${RENDER_DIR}/installers/install.ps1" dist/latest/install.ps1
 cp "${RENDER_DIR}/installers/install.cmd" dist/latest/install.cmd
+echo "$VERSION" > dist/latest/VERSION
 
 aws s3 cp dist/latest/ "${S3_BASE}/latest/" --recursive --exclude "install.*"
 for installer in install.sh install.ps1 install.cmd; do
