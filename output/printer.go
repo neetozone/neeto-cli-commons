@@ -17,6 +17,7 @@ var JSONOptions = json.JoinOptions(
 	json.Deterministic(true),
 	jsontext.EscapeForHTML(true),
 	jsontext.EscapeForJS(true),
+	jsontext.PreserveRawStrings(true),
 )
 
 type Breadcrumb struct {

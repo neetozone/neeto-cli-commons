@@ -121,6 +121,17 @@ func TestPrint_JSONEnvelopeEscapesHTMLAndLineSeparators(t *testing.T) {
 	}
 }
 
+func TestPrint_JSONEnvelopeKeepsTheBodysEscapes(t *testing.T) {
+	pr, buf := newTestPrinter()
+	pr.ForceJSON = true
+
+	pr.Print(jsontext.Value(`{"name":"caf\u00e9 \/ x"}`), nil)
+
+	if got := buf.String(); got != "{\n  \"data\": {\n    \"name\": \"caf\\u00e9 \\/ x\"\n  }\n}\n" {
+		t.Errorf("envelope = %q", got)
+	}
+}
+
 func TestPrint_JSONEnvelopeFallsBackToTheRawBodyWhenItHasDuplicateNames(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.ForceJSON = true
