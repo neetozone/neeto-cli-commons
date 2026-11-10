@@ -1,13 +1,15 @@
 package plugin
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 )
 
 const (
@@ -240,7 +242,7 @@ func (pl *Plugin) substitute(body string) string {
 }
 
 func marshal(v any) ([]byte, error) {
-	data, err := json.MarshalIndent(v, "", "  ")
+	data, err := json.Marshal(v, output.JSONOptions, jsontext.WithIndent("  "))
 	if err != nil {
 		return nil, err
 	}

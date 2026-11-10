@@ -1,10 +1,10 @@
 module github.com/neetozone/neeto-cli-commons/gen
 
-go 1.26.1
+go 1.27.3
 
 require (
 	github.com/charmbracelet/huh v0.6.0
-	github.com/neetozone/neeto-cli-commons v1.2.0
+	github.com/neetozone/neeto-cli-commons/v2 v2.0.0
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )

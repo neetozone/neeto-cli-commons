@@ -11,9 +11,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/neetozone/neeto-cli-commons/assets"
-	"github.com/neetozone/neeto-cli-commons/config"
-	"github.com/neetozone/neeto-cli-commons/plugin"
+	"github.com/neetozone/neeto-cli-commons/v2/assets"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/plugin"
 )
 
 const markerPrefix = "neeto-cli-commons:"

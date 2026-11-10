@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func TestCommonsRawBase_RefKinds(t *testing.T) {

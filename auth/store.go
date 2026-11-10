@@ -1,7 +1,8 @@
 package auth
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -130,7 +131,7 @@ func (a *Auth) SaveStore(store *Store) error {
 		return fmt.Errorf("Could not create config directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(payload, "", "  ")
+	data, err := json.Marshal(payload, jsontext.WithIndent("  "))
 	if err != nil {
 		return fmt.Errorf("Could not serialize credentials: %w", err)
 	}

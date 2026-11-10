@@ -1,7 +1,7 @@
 package output
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"regexp"
 	"strings"
@@ -26,7 +26,7 @@ func FormatHeader(field string) string {
 
 func isScalar(v interface{}) bool {
 	switch v.(type) {
-	case nil, string, float64, bool, json.Number:
+	case nil, string, float64, bool:
 		return true
 	}
 	return false
@@ -147,7 +147,7 @@ func summarizeObject(obj map[string]interface{}) string {
 	if len(obj) == 0 {
 		return "-"
 	}
-	compact, err := json.Marshal(obj)
+	compact, err := json.Marshal(obj, JSONOptions)
 	if err == nil && (len(compact) <= inlineJSONLimit || containsURL(obj)) {
 		return string(compact)
 	}
@@ -167,7 +167,7 @@ func formatArray(arr []interface{}) string {
 	}
 
 	if containsURL(arr) {
-		if compact, err := json.Marshal(arr); err == nil {
+		if compact, err := json.Marshal(arr, JSONOptions); err == nil {
 			return string(compact)
 		}
 	}

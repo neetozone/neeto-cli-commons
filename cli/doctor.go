@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/neetozone/neeto-cli-commons/output"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ type checkResult struct {
 	Name    string `json:"name"`
 	OK      bool   `json:"ok"`
 	Detail  string `json:"detail"`
-	Skipped bool   `json:"skipped,omitempty"`
+	Skipped bool   `json:"skipped,omitzero"`
 }
 
 func (a *App) newDoctorCommand() *cobra.Command {

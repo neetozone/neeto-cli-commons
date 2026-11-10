@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
-	"github.com/neetozone/neeto-cli-commons/render"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/render"
 	"gopkg.in/yaml.v3"
 )
 
@@ -190,7 +190,7 @@ func TestBinSetupNamesTheRepository(t *testing.T) {
 func TestNeetociUsesVerifyAndTheReleaseShim(t *testing.T) {
 	p := product(t, "commons_version: 1.4.0\n")
 	verify := render1(t, p, "neetoci/verify.yml")
-	if !strings.Contains(verify, "neetoci-version go 1.26") {
+	if !strings.Contains(verify, "neetoci-version go 1.27") {
 		t.Error("verify.yml does not derive the Go line from .GoVersion")
 	}
 	if !strings.Contains(verify, "neeto-cli-sync --check") {

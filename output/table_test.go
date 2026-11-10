@@ -1,7 +1,8 @@
 package output
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"reflect"
 	"slices"
@@ -176,7 +177,7 @@ func TestTableUninformative_OnlyWhenColumnsHideNestedData(t *testing.T) {
 func TestPrintTable_JoinsScalarSlicesIntoOneColumn(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"Desk","roles":["Admin","Agent"]},{"name":"KB","roles":["Admin","Collaborator","Editor"]}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"Desk","roles":["Admin","Agent"]},{"name":"KB","roles":["Admin","Collaborator","Editor"]}]`))
 
 	out := buf.String()
 	for _, want := range []string{"───", "ROLES", "Admin, Agent", "Admin, Collaborator, Editor"} {
@@ -189,7 +190,7 @@ func TestPrintTable_JoinsScalarSlicesIntoOneColumn(t *testing.T) {
 func TestPrintTable_EmptySliceRendersAsDash(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"run-a","tags":["smoke"]},{"name":"run-b","tags":[]}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"run-a","tags":["smoke"]},{"name":"run-b","tags":[]}]`))
 
 	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 	last := lines[len(lines)-1]
@@ -282,7 +283,7 @@ func TestCalculateWidths_NeverOverflowsTheTerminal(t *testing.T) {
 func TestTable_URLIsNeverTruncated(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"id":"1","name":"A meeting with a deliberately long name value","url":"` + longURL + `"}]`))
+	pr.printPretty(jsontext.Value(`[{"id":"1","name":"A meeting with a deliberately long name value","url":"` + longURL + `"}]`))
 
 	if !strings.Contains(stripLayout(buf.String()), longURL) {
 		t.Errorf("table output = %q, want it to reassemble to the full URL %q", buf.String(), longURL)
@@ -292,7 +293,7 @@ func TestTable_URLIsNeverTruncated(t *testing.T) {
 func TestTable_URLWrapsInsideItsColumnWithoutBreakingLayout(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"` + strings.Repeat("x", 60) + `","url":"` + longURL + `"}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"` + strings.Repeat("x", 60) + `","url":"` + longURL + `"}]`))
 
 	out := buf.String()
 	if strings.Contains(out, "https://spinkart.neetocal.com/meeting-with-oliver-smith?one_off=eyJhbGciOiJIUzI1NiJ9...") {
@@ -311,7 +312,7 @@ func TestTable_URLWrapsInsideItsColumnWithoutBreakingLayout(t *testing.T) {
 func TestTable_WrappedRowsKeepColumnsAligned(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"sid":"a1","name":"Intro","url":"` + longURL + `"},{"sid":"b2","name":"Short","url":"https://example.com/x"}]`))
+	pr.printPretty(jsontext.Value(`[{"sid":"a1","name":"Intro","url":"` + longURL + `"},{"sid":"b2","name":"Short","url":"https://example.com/x"}]`))
 
 	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 	start := strings.Index(lines[0], "URL")
@@ -331,7 +332,7 @@ func TestTable_WrappedRowsKeepColumnsAligned(t *testing.T) {
 func TestTable_KeepsAtLeastMinContentWidthWhenTruncating(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"Weekly planning session with the design team","slug":"weekly-planning-session-design","summary":"` + strings.Repeat("y", 300) + `","url":"` + longURL + `"}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"Weekly planning session with the design team","slug":"weekly-planning-session-design","summary":"` + strings.Repeat("y", 300) + `","url":"` + longURL + `"}]`))
 
 	for _, line := range strings.Split(buf.String(), "\n") {
 		for _, cell := range strings.Split(line, strings.Repeat(" ", colPadding)) {
@@ -365,7 +366,7 @@ func TestTruncate(t *testing.T) {
 func TestPrintTable_SanitizesControlCharsAndStaysRectangular(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[
+	pr.printPretty(jsontext.Value(`[
 		{"id":"33a006aa","comment_type":"description","content":"At neeto, we are building a number of tools.\nToday we shipped one more."},
 		{"id":"44a006aa","comment_type":"reply","content":"single line reply"}]`))
 
@@ -398,7 +399,7 @@ func TestPrintTable_SanitizesControlCharsAndStaysRectangular(t *testing.T) {
 func TestPrintTable_SanitizesTabsAndAnsiEscapesInCells(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"tab\tseparated","note":"\u001b[31mred\u001b[0m"}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"tab\tseparated","note":"\u001b[31mred\u001b[0m"}]`))
 
 	out := buf.String()
 	if strings.ContainsRune(out, '\t') {
@@ -421,7 +422,7 @@ func TestPrintTable_SanitizesTabsAndAnsiEscapesInCells(t *testing.T) {
 func TestPrintTable_PlainStringCellsPassThroughUntouched(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"name":"Weekly sync","status":"confirmed"}]`))
+	pr.printPretty(jsontext.Value(`[{"name":"Weekly sync","status":"confirmed"}]`))
 
 	if !strings.Contains(buf.String(), "Weekly sync") {
 		t.Errorf("table output missing untouched plain string:\n%s", buf.String())

@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/neetozone/neeto-cli-commons/auth"
-	"github.com/neetozone/neeto-cli-commons/config"
-	"github.com/neetozone/neeto-cli-commons/output"
-	"github.com/neetozone/neeto-cli-commons/plugin"
+	"github.com/neetozone/neeto-cli-commons/v2/auth"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
+	"github.com/neetozone/neeto-cli-commons/v2/plugin"
 	"github.com/spf13/cobra"
 )
 

@@ -130,6 +130,14 @@ func TestSummarizeObject(t *testing.T) {
 	}
 }
 
+func TestSummarizeObject_SortsKeysAndEscapesHTML(t *testing.T) {
+	obj := map[string]interface{}{"z": 1.0, "m": "<b>", "a": "x&y"}
+
+	if got := summarizeObject(obj); got != `{"a":"x\u0026y","m":"\u003cb\u003e","z":1}` {
+		t.Errorf("summarizeObject = %q", got)
+	}
+}
+
 func TestSummarizeObject_KeepsURLsWhateverTheLength(t *testing.T) {
 	obj := map[string]interface{}{"url": longURL, "padding": strings.Repeat("x", 120)}
 

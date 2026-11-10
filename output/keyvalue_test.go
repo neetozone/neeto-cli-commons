@@ -1,7 +1,8 @@
 package output
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestDecodeFields_KeepsThePayloadOrder(t *testing.T) {
-	fields, ok := decodeFields(json.RawMessage(`{"zebra":1,"apple":2,"mango":3}`))
+	fields, ok := decodeFields(jsontext.Value(`{"zebra":1,"apple":2,"mango":3}`))
 	if !ok {
 		t.Fatal("decodeFields returned not-ok for a valid object")
 	}
@@ -25,7 +26,7 @@ func TestDecodeFields_KeepsThePayloadOrder(t *testing.T) {
 
 func TestDecodeFields_RejectsNonObjects(t *testing.T) {
 	for _, raw := range []string{`[1,2]`, `"x"`, `not json`} {
-		if _, ok := decodeFields(json.RawMessage(raw)); ok {
+		if _, ok := decodeFields(jsontext.Value(raw)); ok {
 			t.Errorf("decodeFields(%q) = ok, want not-ok", raw)
 		}
 	}
@@ -34,7 +35,7 @@ func TestDecodeFields_RejectsNonObjects(t *testing.T) {
 func TestPrintPretty_SingleKeyWrapperIsUnwrapped(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"client":{"name":"Acme Corp","status":"active"}}`))
+	pr.printPretty(jsontext.Value(`{"client":{"name":"Acme Corp","status":"active"}}`))
 
 	out := buf.String()
 	if !strings.Contains(out, "Acme Corp") || !strings.Contains(out, "active") {
@@ -48,7 +49,7 @@ func TestPrintPretty_SingleKeyWrapperIsUnwrapped(t *testing.T) {
 func TestPrintPretty_MultiKeyExpandsNestedObject(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"client":{"name":"Acme Corp","identifier":"eb29be2e8c203a71ec1d","status":"active","currency":"USD"},"recipients":[]}`))
+	pr.printPretty(jsontext.Value(`{"client":{"name":"Acme Corp","identifier":"eb29be2e8c203a71ec1d","status":"active","currency":"USD"},"recipients":[]}`))
 
 	out := buf.String()
 	for _, want := range []string{"CLIENT", "Acme Corp", "eb29be2e8c203a71ec1d", "active", "USD"} {
@@ -67,7 +68,7 @@ func TestPrintPretty_MultiKeyExpandsNestedObject(t *testing.T) {
 func TestPrintPretty_NestedArrayOfObjectsBecomesATable(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"client":{"name":"Acme Corp"},"recipients":[
+	pr.printPretty(jsontext.Value(`{"client":{"name":"Acme Corp"},"recipients":[
 		{"name":"Oliver Smith","email":"oliver.smith@example.com"},
 		{"name":"Sam Smith","email":"sam.smith@example.com"}]}`))
 
@@ -87,7 +88,7 @@ func TestPrintPretty_NestingStopsAtMaxRenderDepth(t *testing.T) {
 		"cccccccccc":"0123456789","dddddddddd":"0123456789","eeeeeeeeee":"0123456789","ffffffffff":"0123456789"}}}}}`
 
 	pr, buf := newTestPrinter()
-	pr.printPretty(json.RawMessage(deep))
+	pr.printPretty(jsontext.Value(deep))
 
 	out := buf.String()
 	for _, want := range []string{`(?m)^  L1$`, `(?m)^    L2$`, `(?m)^      L3  \(6 fields\)$`} {
@@ -102,7 +103,7 @@ func TestPrintPretty_NestingStopsAtMaxRenderDepth(t *testing.T) {
 
 func TestPrintPretty_LongScalarIsPreviewed(t *testing.T) {
 	longContent := "<p>" + strings.Repeat("lorem ipsum ", 40) + "</p>"
-	data := json.RawMessage(`{"article":{"title":"Getting started","html_content":` + strconv.Quote(longContent) + `}}`)
+	data := jsontext.Value(`{"article":{"title":"Getting started","html_content":` + strconv.Quote(longContent) + `}}`)
 
 	pr, buf := newTestPrinter()
 	pr.printPretty(data)
@@ -119,7 +120,7 @@ func TestPrintPretty_LongScalarIsPreviewed(t *testing.T) {
 func TestPrintPretty_EmptyContainersRenderAsDash(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"id":1,"extras":{},"tags":[]}`))
+	pr.printPretty(jsontext.Value(`{"id":1,"extras":{},"tags":[]}`))
 
 	out := buf.String()
 	for _, want := range []string{`(?m)^  EXTRAS +-$`, `(?m)^  TAGS +-$`} {
@@ -132,7 +133,7 @@ func TestPrintPretty_EmptyContainersRenderAsDash(t *testing.T) {
 func TestPrintPretty_NestedURLIsNotHiddenBehindAFieldCount(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"booking":{"id":"42","status":"scheduled","meeting":{"sid":"abc","name":"Intro call","slug":"intro-call","duration":30,"url":"` + longURL + `"}}}`))
+	pr.printPretty(jsontext.Value(`{"booking":{"id":"42","status":"scheduled","meeting":{"sid":"abc","name":"Intro call","slug":"intro-call","duration":30,"url":"` + longURL + `"}}}`))
 
 	if !strings.Contains(buf.String(), longURL) {
 		t.Errorf("key-value output = %q, want it to contain the nested URL", buf.String())
@@ -142,7 +143,7 @@ func TestPrintPretty_NestedURLIsNotHiddenBehindAFieldCount(t *testing.T) {
 func TestPrintPretty_NestedArrayURLIsNotHidden(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`{"booking":{"id":"42","attachments":[{"name":"` + strings.Repeat("a", 90) + `","url":"` + longURL + `"}]}}`))
+	pr.printPretty(jsontext.Value(`{"booking":{"id":"42","attachments":[{"name":"` + strings.Repeat("a", 90) + `","url":"` + longURL + `"}]}}`))
 
 	if !strings.Contains(stripLayout(buf.String()), longURL) {
 		t.Errorf("key-value output does not reassemble to the nested URL:\n%s", buf.String())
@@ -153,7 +154,7 @@ func TestPrintPretty_VerboseReplacesTheTableWithRecordBlocks(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.Verbose = true
 
-	pr.printPretty(json.RawMessage(`[{
+	pr.printPretty(jsontext.Value(`[{
 		"id": "3ad844c3-2785-4ddf-87a4-b48195fc6360",
 		"created_at": "2026-02-09T05:20:59.464Z",
 		"user_agent": {"name":"Chrome","operating_system":"macOS","ip_address":"1.2.3.4"},
@@ -192,7 +193,7 @@ func TestPrintPretty_VerboseReplacesTheTableWithRecordBlocks(t *testing.T) {
 func TestPrintPretty_AnswersBecomeColumnsInsteadOfRecordBlocks(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{
+	pr.printPretty(jsontext.Value(`[{
 		"id": "3ad844c3-2785-4ddf-87a4-b48195fc6360",
 		"created_at": "2026-02-09T05:20:59.464Z",
 		"user_agent": {"name":"Chrome","operating_system":"macOS","ip_address":"1.2.3.4"},
@@ -219,7 +220,7 @@ func TestPrintPretty_AnswersBecomeColumnsInsteadOfRecordBlocks(t *testing.T) {
 func TestPrintPretty_RecordBlocksAreSeparatedByABlankLine(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"id":1,"owner":{"name":"Oliver Smith"}},{"id":2,"owner":{"name":"Sam Smith"}}]`))
+	pr.printPretty(jsontext.Value(`[{"id":1,"owner":{"name":"Oliver Smith"}},{"id":2,"owner":{"name":"Sam Smith"}}]`))
 
 	if !strings.Contains(buf.String(), "\n\n") {
 		t.Errorf("consecutive record blocks should be separated by a blank line:\n%s", buf.String())
@@ -229,7 +230,7 @@ func TestPrintPretty_RecordBlocksAreSeparatedByABlankLine(t *testing.T) {
 func TestPrintPretty_RecordBlockLeadsWithTheTableColumns(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[{"zebra":"z","owner":{"name":"Oliver Smith"},"title":"Contact form"}]`))
+	pr.printPretty(jsontext.Value(`[{"zebra":"z","owner":{"name":"Oliver Smith"},"title":"Contact form"}]`))
 
 	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 	var labels []string
@@ -246,7 +247,7 @@ func TestPrintPretty_RecordBlockLeadsWithTheTableColumns(t *testing.T) {
 func TestPrintPretty_ListsWithEnoughColumnsStayTables(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`[
+	pr.printPretty(jsontext.Value(`[
 		{"id":"f1","title":"Contact form","state":"published","submissions_count":3,"created_at":"2026-02-09T05:20:59.464Z"},
 		{"id":"f2","title":"Survey","state":"draft","submissions_count":0,"created_at":"2026-02-10T05:20:59.464Z"}]`))
 
@@ -261,7 +262,7 @@ func TestPrintPretty_ListsWithEnoughColumnsStayTables(t *testing.T) {
 func TestPrintPretty_NonJSONBodyIsPrintedRaw(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printPretty(json.RawMessage(`<html>oops</html>`))
+	pr.printPretty(jsontext.Value(`<html>oops</html>`))
 
 	if buf.String() != "<html>oops</html>\n" {
 		t.Errorf("printPretty = %q, want the raw body on its own line", buf.String())
@@ -271,7 +272,7 @@ func TestPrintPretty_NonJSONBodyIsPrintedRaw(t *testing.T) {
 func TestPrintArray_FallsBackToIndentedJSONForScalarLists(t *testing.T) {
 	pr, buf := newTestPrinter()
 
-	pr.printArray(json.RawMessage(`[1,2,3]`), 1)
+	pr.printArray(jsontext.Value(`[1,2,3]`), 1)
 
 	for _, line := range strings.Split(strings.TrimRight(buf.String(), "\n"), "\n") {
 		if !strings.HasPrefix(line, "  ") {

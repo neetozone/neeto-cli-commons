@@ -2,7 +2,7 @@
 set -euo pipefail
 
 COMMONS_VERSION="${1:-}"
-COMMONS_REPO="github.com/neetozone/neeto-cli-commons"
+COMMONS_REPO="github.com/neetozone/neeto-cli-commons/v2"
 ORG="neetozone"
 
 if [ -z "$COMMONS_VERSION" ]; then

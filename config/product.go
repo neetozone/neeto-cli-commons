@@ -133,7 +133,7 @@ func (p *Product) ApplyDerivations() {
 		p.ShortDescription = p.PrettyName + " CLI"
 	}
 	if p.GoVersion == "" {
-		p.GoVersion = "1.26.1"
+		p.GoVersion = "1.27.3"
 	}
 	if len(p.PriorityFields) == 0 {
 		p.PriorityFields = DefaultPriorityFields()

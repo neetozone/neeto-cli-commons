@@ -2,11 +2,11 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +26,7 @@ func listPrinterApp(t *testing.T) (*App, *bytes.Buffer) {
 func TestPrintListRendersNestedPagination(t *testing.T) {
 	a, buf := listPrinterApp(t)
 
-	a.PrintList(json.RawMessage(`{"apps":[{"id":1}],"pagination":{"total_pages":3,"current_page":2}}`), "apps", nil)
+	a.PrintList(jsontext.Value(`{"apps":[{"id":1}],"pagination":{"total_pages":3,"current_page":2}}`), "apps", nil)
 
 	if !strings.Contains(buf.String(), `"total_pages": 3`) {
 		t.Errorf("nested pagination was dropped: %s", buf.String())
@@ -36,7 +36,7 @@ func TestPrintListRendersNestedPagination(t *testing.T) {
 func TestPrintListRebuildsTopLevelPagination(t *testing.T) {
 	a, buf := listPrinterApp(t)
 
-	a.PrintList(json.RawMessage(`{"apps":[{"id":1}],"total_pages":3,"current_page":2,"total_count":25}`), "apps", nil)
+	a.PrintList(jsontext.Value(`{"apps":[{"id":1}],"total_pages":3,"current_page":2,"total_count":25}`), "apps", nil)
 
 	out := buf.String()
 	for _, want := range []string{`"total_pages": 3`, `"current_page_number": 2`, `"total_records": 25`} {
@@ -49,7 +49,7 @@ func TestPrintListRebuildsTopLevelPagination(t *testing.T) {
 func TestPrintListWithoutPaginationStaysUnchanged(t *testing.T) {
 	a, buf := listPrinterApp(t)
 
-	a.PrintList(json.RawMessage(`{"apps":[{"id":1}],"current_page":2}`), "apps", nil)
+	a.PrintList(jsontext.Value(`{"apps":[{"id":1}],"current_page":2}`), "apps", nil)
 
 	if strings.Contains(buf.String(), "pagination") {
 		t.Errorf("a body with no total_pages must not grow a pagination block: %s", buf.String())
@@ -101,7 +101,7 @@ func TestPaginationParamsDefaultsTheMaxToAHundred(t *testing.T) {
 func TestPrintListReadsNeetoInvoicePaginationKeys(t *testing.T) {
 	a, buf := listPrinterApp(t)
 
-	a.PrintList(json.RawMessage(`{"time_entries":[{"id":1}],"total_count":42,"total_pages":5,"page":2,"page_size":10}`), "time_entries", nil)
+	a.PrintList(jsontext.Value(`{"time_entries":[{"id":1}],"total_count":42,"total_pages":5,"page":2,"page_size":10}`), "time_entries", nil)
 
 	out := buf.String()
 	for _, want := range []string{`"current_page_number": 2`, `"total_records": 42`, `"total_pages": 5`} {
@@ -114,7 +114,7 @@ func TestPrintListReadsNeetoInvoicePaginationKeys(t *testing.T) {
 func TestPrintListIgnoresAPageKeyWithoutTotalPages(t *testing.T) {
 	a, buf := listPrinterApp(t)
 
-	a.PrintList(json.RawMessage(`{"time_entries":[{"id":1}],"page":2}`), "time_entries", nil)
+	a.PrintList(jsontext.Value(`{"time_entries":[{"id":1}],"page":2}`), "time_entries", nil)
 
 	if strings.Contains(buf.String(), "pagination") {
 		t.Errorf("a body with no total_pages must not grow a pagination block: %s", buf.String())

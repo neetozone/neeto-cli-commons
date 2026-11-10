@@ -2,12 +2,13 @@ package output
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func newTestPrinter() (*Printer, *bytes.Buffer) {
@@ -97,11 +98,56 @@ func TestPrintMessage(t *testing.T) {
 	}
 }
 
+func TestPrintMessage_JSONEscapesHTMLCharacters(t *testing.T) {
+	pr, buf := newTestPrinter()
+	pr.ForceJSON = true
+
+	pr.PrintMessage("Saved <draft> & sent")
+
+	if got := strings.TrimSpace(buf.String()); got != `{"message":"Saved \u003cdraft\u003e \u0026 sent"}` {
+		t.Errorf("PrintMessage = %q", got)
+	}
+}
+
+func TestPrint_JSONEnvelopeEscapesHTMLAndLineSeparators(t *testing.T) {
+	pr, buf := newTestPrinter()
+	pr.ForceJSON = true
+
+	pr.Print(jsontext.Value(`{"body":"<p>Tom & Jerry</p>`+"\u2028"+`"}`), nil)
+
+	want := "{\n  \"data\": {\n    \"body\": \"\\u003cp\\u003eTom \\u0026 Jerry\\u003c/p\\u003e\\u2028\"\n  }\n}\n"
+	if got := buf.String(); got != want {
+		t.Errorf("envelope = %q, want %q", got, want)
+	}
+}
+
+func TestPrint_JSONEnvelopeFallsBackToTheRawBodyWhenItHasDuplicateNames(t *testing.T) {
+	pr, buf := newTestPrinter()
+	pr.ForceJSON = true
+
+	pr.Print(jsontext.Value(`{"code":"A","code":"B"}`), nil)
+
+	if got := buf.String(); got != "{\"code\":\"A\",\"code\":\"B\"}\n" {
+		t.Errorf("output = %q, want the raw body", got)
+	}
+}
+
+func TestPrintWithPagination_JSONEnvelopeKeepsANullPagination(t *testing.T) {
+	pr, buf := newTestPrinter()
+	pr.ForceJSON = true
+
+	pr.PrintWithPagination(jsontext.Value(`[]`), jsontext.Value(`null`), nil)
+
+	if got := buf.String(); got != "{\n  \"data\": [],\n  \"pagination\": null\n}\n" {
+		t.Errorf("envelope = %q", got)
+	}
+}
+
 func TestPrint_QuietModeEmitsTheRawBody(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.Quiet = true
 
-	pr.Print(json.RawMessage(`[{"id":1}]`), []Breadcrumb{{Label: "l", Command: "c"}})
+	pr.Print(jsontext.Value(`[{"id":1}]`), []Breadcrumb{{Label: "l", Command: "c"}})
 
 	if got := strings.TrimSpace(buf.String()); got != `[{"id":1}]` {
 		t.Errorf("quiet output = %q, want the raw data", got)
@@ -112,7 +158,7 @@ func TestPrint_JSONEnvelopeCarriesBreadcrumbs(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.ForceJSON = true
 
-	pr.Print(json.RawMessage(`{"name":"test"}`), []Breadcrumb{{Label: "details", Command: "app show 1"}})
+	pr.Print(jsontext.Value(`{"name":"test"}`), []Breadcrumb{{Label: "details", Command: "app show 1"}})
 
 	var envelope Envelope
 	if err := json.Unmarshal(buf.Bytes(), &envelope); err != nil {
@@ -134,7 +180,7 @@ func TestPrintWithPagination_JSONEnvelopeCarriesPagination(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.ForceJSON = true
 
-	pr.PrintWithPagination(json.RawMessage(`[{"id":1}]`), json.RawMessage(`{"current_page_number":1,"total_pages":3}`), nil)
+	pr.PrintWithPagination(jsontext.Value(`[{"id":1}]`), jsontext.Value(`{"current_page_number":1,"total_pages":3}`), nil)
 
 	var envelope Envelope
 	if err := json.Unmarshal(buf.Bytes(), &envelope); err != nil {
@@ -149,7 +195,7 @@ func TestPrintWithPagination_QuietModeDropsPagination(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.Quiet = true
 
-	pr.PrintWithPagination(json.RawMessage(`[{"id":1}]`), json.RawMessage(`{"current_page_number":1}`), nil)
+	pr.PrintWithPagination(jsontext.Value(`[{"id":1}]`), jsontext.Value(`{"current_page_number":1}`), nil)
 
 	if got := strings.TrimSpace(buf.String()); got != `[{"id":1}]` {
 		t.Errorf("quiet output = %q, want the raw data without pagination", got)
@@ -170,7 +216,7 @@ func TestPrintQuiet_PrintsOnlyTheIdentifier(t *testing.T) {
 		pr, buf := newTestPrinter()
 		pr.Quiet = true
 
-		pr.PrintQuiet(json.RawMessage(payload), nil)
+		pr.PrintQuiet(jsontext.Value(payload), nil)
 
 		if got := strings.TrimSpace(buf.String()); got != want {
 			t.Errorf("PrintQuiet(%s) = %q, want %q", payload, got, want)
@@ -182,7 +228,7 @@ func TestPrintQuiet_FallsBackToPrintWhenThereIsNoIdentifier(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.Quiet = true
 
-	pr.PrintQuiet(json.RawMessage(`{"total":3}`), nil)
+	pr.PrintQuiet(jsontext.Value(`{"total":3}`), nil)
 
 	if got := strings.TrimSpace(buf.String()); got != `{"total":3}` {
 		t.Errorf("PrintQuiet = %q, want the raw body", got)
@@ -193,7 +239,7 @@ func TestPrintTable_RendersCallerSuppliedColumns(t *testing.T) {
 	pr, buf := newPrettyPrinter()
 
 	pr.PrintTable(
-		json.RawMessage(`[{"name":"closed","value":{"present":8,"previous":null}}]`),
+		jsontext.Value(`[{"name":"closed","value":{"present":8,"previous":null}}]`),
 		[]string{"NAME", "PRESENT", "PREVIOUS"},
 		[][]interface{}{{"closed", float64(8), nil}},
 		[]Breadcrumb{{Label: "Show", Command: "app show"}},
@@ -210,7 +256,7 @@ func TestPrintTable_RendersCallerSuppliedColumns(t *testing.T) {
 func TestPrintTable_JSONModePreservesTheRawPayload(t *testing.T) {
 	pr, buf := newTestPrinter()
 	pr.ForceJSON = true
-	raw := json.RawMessage(`[{"name":"closed","value":{"present":8,"previous":null}}]`)
+	raw := jsontext.Value(`[{"name":"closed","value":{"present":8,"previous":null}}]`)
 
 	pr.PrintTable(raw, []string{"NAME", "PRESENT"}, [][]interface{}{{"closed", float64(8)}}, nil)
 
@@ -246,7 +292,7 @@ func TestPrintPaginationSummary(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pr, buf := newTestPrinter()
 
-			pr.printPaginationSummary(json.RawMessage(tc.raw))
+			pr.printPaginationSummary(jsontext.Value(tc.raw))
 
 			if buf.String() != tc.want {
 				t.Errorf("printPaginationSummary = %q, want %q", buf.String(), tc.want)
@@ -312,11 +358,11 @@ func TestPrint_Toon(t *testing.T) {
 			pr, buf := newTestPrinter()
 			pr.Toon = true
 
-			var pagination json.RawMessage
+			var pagination jsontext.Value
 			if tc.pagination != "" {
-				pagination = json.RawMessage(tc.pagination)
+				pagination = jsontext.Value(tc.pagination)
 			}
-			pr.PrintWithPagination(json.RawMessage(tc.data), pagination, []Breadcrumb{{Label: "l", Command: "c"}})
+			pr.PrintWithPagination(jsontext.Value(tc.data), pagination, []Breadcrumb{{Label: "l", Command: "c"}})
 
 			if buf.String() != tc.want {
 				t.Errorf("toon output = %q, want %q", buf.String(), tc.want)
@@ -454,11 +500,11 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 			pr, buf := newPrettyPrinter()
 			pr.Verbose = tc.verbose
 
-			var pagination json.RawMessage
+			var pagination jsontext.Value
 			if tc.pagination != "" {
-				pagination = json.RawMessage(tc.pagination)
+				pagination = jsontext.Value(tc.pagination)
 			}
-			pr.PrintWithPagination(json.RawMessage(tc.data), pagination, crumbs)
+			pr.PrintWithPagination(jsontext.Value(tc.data), pagination, crumbs)
 
 			if buf.String() != tc.want {
 				t.Errorf("rendered output differs.\n--- got ---\n%s\n--- want ---\n%s", buf.String(), tc.want)
@@ -470,7 +516,7 @@ func TestPrintPretty_Fixtures(t *testing.T) {
 func TestPrint_PrettyPathRendersATableAndBreadcrumbs(t *testing.T) {
 	pr, buf := newPrettyPrinter()
 
-	pr.Print(json.RawMessage(`[{"id":1,"name":"Only two","note":"cols"}]`), []Breadcrumb{{Label: "Show", Command: "app show 1"}})
+	pr.Print(jsontext.Value(`[{"id":1,"name":"Only two","note":"cols"}]`), []Breadcrumb{{Label: "Show", Command: "app show 1"}})
 
 	want := "ID   NAME       NOTE\n" +
 		"──   ────────   ────\n" +
@@ -482,7 +528,7 @@ func TestPrint_PrettyPathRendersATableAndBreadcrumbs(t *testing.T) {
 }
 
 func TestPrintTable_QuietAndToonModes(t *testing.T) {
-	raw := json.RawMessage(`[{"name":"closed","value":8}]`)
+	raw := jsontext.Value(`[{"name":"closed","value":8}]`)
 
 	cases := []struct {
 		name string
@@ -510,7 +556,7 @@ func TestPrintTable_QuietAndToonModes(t *testing.T) {
 func TestPrintQuiet_NonQuietModeFallsThroughToPrint(t *testing.T) {
 	pr, buf := newPrettyPrinter()
 
-	pr.PrintQuiet(json.RawMessage(`{"sid":"m-001","name":"Intro"}`), nil)
+	pr.PrintQuiet(jsontext.Value(`{"sid":"m-001","name":"Intro"}`), nil)
 
 	want := "  SID   m-001\n  NAME  Intro\n"
 	if buf.String() != want {
@@ -527,7 +573,7 @@ func TestPrintPaginationSummaryAcceptsEitherTotalKey(t *testing.T) {
 
 	for payload, want := range cases {
 		pr, buf := newPrettyPrinter()
-		pr.printPaginationSummary(json.RawMessage(payload))
+		pr.printPaginationSummary(jsontext.Value(payload))
 
 		if got := strings.TrimSpace(buf.String()); got != want {
 			t.Errorf("payload %s = %q, want %q", payload, got, want)
@@ -550,7 +596,7 @@ func TestIntFromPrefersPresenceOverNonZero(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		var parsed map[string]json.RawMessage
+		var parsed map[string]jsontext.Value
 		if err := json.Unmarshal([]byte(c.body), &parsed); err != nil {
 			t.Fatal(err)
 		}
@@ -563,7 +609,7 @@ func TestIntFromPrefersPresenceOverNonZero(t *testing.T) {
 func TestPrintPaginationSummaryReportsAnEmptyPageAsEmpty(t *testing.T) {
 	pr, buf := newPrettyPrinter()
 
-	pr.printPaginationSummary(json.RawMessage(`{"current_page_number":0,"total_pages":0,"total_records":0,"total_count":250}`))
+	pr.printPaginationSummary(jsontext.Value(`{"current_page_number":0,"total_pages":0,"total_records":0,"total_count":250}`))
 
 	want := "Page 0 of 0 (0 total records)"
 	if got := strings.TrimSpace(buf.String()); got != want {

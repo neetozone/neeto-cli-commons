@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/charmbracelet/huh"
-	"github.com/neetozone/neeto-cli-commons/config"
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func Ask(templateVersion string) (*vars.Variables, error) {

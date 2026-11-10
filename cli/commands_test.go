@@ -2,13 +2,13 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	json "encoding/json/v2"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/auth"
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/auth"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 	"github.com/spf13/cobra"
 )
 

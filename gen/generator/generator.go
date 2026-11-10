@@ -10,7 +10,7 @@ import (
 
 	"github.com/neetozone/neeto-cli-commons/gen/questionnaire"
 	"github.com/neetozone/neeto-cli-commons/gen/vars"
-	"github.com/neetozone/neeto-cli-commons/render"
+	"github.com/neetozone/neeto-cli-commons/v2/render"
 )
 
 type Options struct {

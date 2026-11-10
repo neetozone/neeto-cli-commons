@@ -1,11 +1,14 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 )
 
 type catalogFlag struct {
@@ -14,7 +17,7 @@ type catalogFlag struct {
 	Type        string `json:"type"`
 	Default     string `json:"default,omitempty"`
 	Description string `json:"description"`
-	Required    bool   `json:"required,omitempty"`
+	Required    bool   `json:"required,omitzero"`
 }
 
 type catalogEntry struct {
@@ -29,7 +32,7 @@ func (a *App) newCommandsCatalogCommand() *cobra.Command {
 		Use:   "commands",
 		Short: "List all available commands as JSON",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, err := json.MarshalIndent(buildCatalog(a.root), "", "  ")
+			out, err := json.Marshal(buildCatalog(a.root), output.JSONOptions, jsontext.WithIndent("  "))
 			if err != nil {
 				return err
 			}

@@ -1,10 +1,10 @@
 package client
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 
-	"github.com/neetozone/neeto-cli-commons/output"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 )
 
 type APIError struct {
