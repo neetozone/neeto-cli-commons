@@ -225,7 +225,6 @@ func funcs() template.FuncMap {
 			_, repo := splitTap(p.HomebrewTap)
 			return repo
 		},
-		"goMinor":          goMinor,
 		"commonsRawBase":   commonsRawBase,
 		"releaseScriptSHA": ReleaseScriptSHA256,
 	}

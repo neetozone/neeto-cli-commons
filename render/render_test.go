@@ -190,8 +190,8 @@ func TestBinSetupNamesTheRepository(t *testing.T) {
 func TestNeetociUsesVerifyAndTheReleaseShim(t *testing.T) {
 	p := product(t, "commons_version: 1.4.0\n")
 	verify := render1(t, p, "neetoci/verify.yml")
-	if !strings.Contains(verify, "neetoci-version go 1.27") {
-		t.Error("verify.yml does not derive the Go line from .GoVersion")
+	if !strings.Contains(verify, "export GOTOOLCHAIN=go1.27.3") {
+		t.Error("verify.yml does not derive the Go toolchain from .GoVersion")
 	}
 	if !strings.Contains(verify, "neeto-cli-sync --check") {
 		t.Error("verify.yml does not run the sync check")

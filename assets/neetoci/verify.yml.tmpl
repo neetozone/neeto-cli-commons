@@ -28,7 +28,8 @@ machine_type: multi
 
 commands:
   - checkout
-  - neetoci-version go {{goMinor .GoVersion}}
+  - neetoci-version go 1.26
+  - export GOTOOLCHAIN=go{{.GoVersion}}
   - export GOPRIVATE=github.com/neetozone/*
   - git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
   - go mod download
