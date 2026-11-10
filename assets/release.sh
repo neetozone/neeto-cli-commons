@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CONFIG_FILE="${NEETO_CLI_CONFIG:-.neeto-cli.yml}"
-SYNC_PKG="github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync"
+SYNC_PKG="github.com/neetozone/neeto-cli-commons/v2/cmd/neeto-cli-sync"
 
 LAST_COMMIT_MSG=$(git log -1 --format="%s")
 if echo "$LAST_COMMIT_MSG" | grep -q "^Bump version to "; then

@@ -1,13 +1,13 @@
 package plugin
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 const skillFixture = `---

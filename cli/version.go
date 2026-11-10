@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ func (a *App) newVersionCommand() *cobra.Command {
 					"version": a.Build.Version,
 					"commit":  a.Build.Commit,
 					"date":    a.Build.Date,
-				})
+				}, output.JSONOptions)
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(payload))
 				return
 			}

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/neetozone/neeto-cli-commons/assets"
-	"github.com/neetozone/neeto-cli-commons/config"
-	"github.com/neetozone/neeto-cli-commons/plugin"
+	"github.com/neetozone/neeto-cli-commons/v2/assets"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/plugin"
 )
 
 const markerPrefix = "neeto-cli-commons:"
@@ -225,7 +225,6 @@ func funcs() template.FuncMap {
 			_, repo := splitTap(p.HomebrewTap)
 			return repo
 		},
-		"goMinor":          goMinor,
 		"commonsRawBase":   commonsRawBase,
 		"releaseScriptSHA": ReleaseScriptSHA256,
 	}
@@ -240,14 +239,6 @@ func splitTap(tap string) (owner, repo string) {
 		repo = "homebrew-" + repo
 	}
 	return owner, repo
-}
-
-func goMinor(version string) string {
-	parts := strings.Split(version, ".")
-	if len(parts) < 2 {
-		return version
-	}
-	return parts[0] + "." + parts[1]
 }
 
 var bareSemver = regexp.MustCompile(`^\d+\.\d+`)

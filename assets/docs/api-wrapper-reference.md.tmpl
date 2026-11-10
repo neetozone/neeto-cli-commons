@@ -1,7 +1,7 @@
 # Shared API reference
 
 The helpers a command in this repo can call. They come from
-`github.com/neetozone/neeto-cli-commons` and behave identically in all eleven neeto CLIs.
+`github.com/neetozone/neeto-cli-commons/v2` and behave identically in all eleven neeto CLIs.
 
 This file is generated. Edit it in neeto-cli-commons, not here.
 

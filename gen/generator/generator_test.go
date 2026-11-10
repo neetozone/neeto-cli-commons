@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func TestGenerateAndBuild(t *testing.T) {

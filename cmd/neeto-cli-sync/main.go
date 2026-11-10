@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/neetozone/neeto-cli-commons/config"
-	"github.com/neetozone/neeto-cli-commons/render"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+	"github.com/neetozone/neeto-cli-commons/v2/render"
 )
 
 func main() {

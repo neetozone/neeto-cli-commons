@@ -29,7 +29,7 @@ install: build
 	install -m 0755 $(BINARY_NAME) $(INSTALL_DIR)/$(BINARY_NAME)
 
 sync:
-	go run github.com/neetozone/neeto-cli-commons/cmd/neeto-cli-sync
+	go run github.com/neetozone/neeto-cli-commons/v2/cmd/neeto-cli-sync
 
 setup:
 	git config core.hooksPath .githooks

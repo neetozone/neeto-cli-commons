@@ -2,7 +2,8 @@ package client
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/neetozone/neeto-cli-commons/auth"
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/auth"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 const defaultTimeout = 30 * time.Second
@@ -52,26 +53,26 @@ func New(p config.Product, creds *auth.Credentials, version string) *Client {
 	return c
 }
 
-func (c *Client) Get(path string, params url.Values) (json.RawMessage, error) {
+func (c *Client) Get(path string, params url.Values) (jsontext.Value, error) {
 	return c.get(c.BaseURL, path, params)
 }
 
-func (c *Client) GetV2(path string, params url.Values) (json.RawMessage, error) {
+func (c *Client) GetV2(path string, params url.Values) (jsontext.Value, error) {
 	if c.V2BasePath == "" {
 		return nil, fmt.Errorf("client: V2BasePath is not configured")
 	}
 	return c.get(c.Host+c.V2BasePath, path, params)
 }
 
-func (c *Client) Post(path string, body any) (json.RawMessage, error) {
+func (c *Client) Post(path string, body any) (jsontext.Value, error) {
 	return c.doWithBody(http.MethodPost, path, body)
 }
 
-func (c *Client) Put(path string, body any) (json.RawMessage, error) {
+func (c *Client) Put(path string, body any) (jsontext.Value, error) {
 	return c.doWithBody(http.MethodPut, path, body)
 }
 
-func (c *Client) Patch(path string, body any) (json.RawMessage, error) {
+func (c *Client) Patch(path string, body any) (jsontext.Value, error) {
 	return c.doWithBody(http.MethodPatch, path, body)
 }
 
@@ -88,11 +89,11 @@ func (c *Client) DeleteWithParams(path string, params url.Values) error {
 	return err
 }
 
-func (c *Client) DeleteWithBody(path string, body any) (json.RawMessage, error) {
+func (c *Client) DeleteWithBody(path string, body any) (jsontext.Value, error) {
 	return c.doWithBody(http.MethodDelete, path, body)
 }
 
-func (c *Client) get(base, path string, params url.Values) (json.RawMessage, error) {
+func (c *Client) get(base, path string, params url.Values) (jsontext.Value, error) {
 	req, err := http.NewRequest(http.MethodGet, withParams(base+path, params), nil)
 	if err != nil {
 		return nil, err
@@ -113,12 +114,13 @@ func withParams(u string, params url.Values) string {
 	return u + separator + params.Encode()
 }
 
-func (c *Client) doWithBody(method, path string, body any) (json.RawMessage, error) {
+func (c *Client) doWithBody(method, path string, body any) (jsontext.Value, error) {
 	var buf bytes.Buffer
 	if body != nil {
-		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+		if err := json.MarshalWrite(&buf, body, json.FormatNilSliceAsNull(true), json.FormatNilMapAsNull(true)); err != nil {
 			return nil, fmt.Errorf("Could not encode request body: %w", err)
 		}
+		buf.WriteByte('\n')
 	}
 
 	req, err := http.NewRequest(method, c.BaseURL+path, &buf)
@@ -128,7 +130,7 @@ func (c *Client) doWithBody(method, path string, body any) (json.RawMessage, err
 	return c.do(req)
 }
 
-func (c *Client) do(req *http.Request) (json.RawMessage, error) {
+func (c *Client) do(req *http.Request) (jsontext.Value, error) {
 	req.Header.Set("Session-Token", c.SessionToken)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -156,7 +158,7 @@ func (c *Client) do(req *http.Request) (json.RawMessage, error) {
 		})
 	}
 
-	return json.RawMessage(respBody), nil
+	return jsontext.Value(respBody), nil
 }
 
 func (c *Client) httpClient() *http.Client {

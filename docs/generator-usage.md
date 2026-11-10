@@ -84,7 +84,7 @@ s3_bucket: neeto-downloads
 s3_path_prefix: cli/NeetoForm
 
 # Tooling
-go_version: 1.26.1
+go_version: 1.27.3
 
 # Post-gen
 run_tidy: true

@@ -1,7 +1,8 @@
 package auth
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,7 +94,7 @@ func TestSaveLoadStore_RoundTrip(t *testing.T) {
 		t.Errorf("order not preserved: %+v", loaded.Credentials)
 	}
 
-	var shape map[string]json.RawMessage
+	var shape map[string]jsontext.Value
 	if err := json.Unmarshal(readRawAuthFile(t, a), &shape); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
 	}
@@ -162,7 +163,7 @@ func TestLoadStore_LegacySingleObjectMigrates(t *testing.T) {
 	if err := a.SaveStore(store); err != nil {
 		t.Fatalf("SaveStore() error = %v", err)
 	}
-	var shape map[string]json.RawMessage
+	var shape map[string]jsontext.Value
 	if err := json.Unmarshal(readRawAuthFile(t, a), &shape); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
 	}
@@ -196,7 +197,7 @@ func TestSingleHost_RoundTripUsesFlatShape(t *testing.T) {
 		t.Fatalf("SaveStore() error = %v", err)
 	}
 
-	var shape map[string]json.RawMessage
+	var shape map[string]jsontext.Value
 	if err := json.Unmarshal(readRawAuthFile(t, a), &shape); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
 	}
@@ -245,7 +246,7 @@ func TestSingleHost_MigratesLegacyMultiStore(t *testing.T) {
 	if err := a.SaveStore(store); err != nil {
 		t.Fatalf("SaveStore() error = %v", err)
 	}
-	var shape map[string]json.RawMessage
+	var shape map[string]jsontext.Value
 	if err := json.Unmarshal(readRawAuthFile(t, a), &shape); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
 	}
@@ -441,7 +442,7 @@ func TestSelectCredentials_SingleHostNotLoggedIn(t *testing.T) {
 	}
 }
 
-func keys(m map[string]json.RawMessage) []string {
+func keys(m map[string]jsontext.Value) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)

@@ -14,6 +14,6 @@ config_dir: .config/testapp
 homebrew_tap: neetozone/homebrew-tap
 s3_bucket: neeto-downloads
 s3_path_prefix: cli/TestApp
-go_version: 1.26.1
+go_version: 1.27.3
 run_tidy: false
 run_git_init: false

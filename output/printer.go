@@ -1,7 +1,8 @@
 package output
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +10,14 @@ import (
 	"github.com/alpkeskin/gotoon"
 	"golang.org/x/term"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
+)
+
+var JSONOptions = json.JoinOptions(
+	json.Deterministic(true),
+	jsontext.EscapeForHTML(true),
+	jsontext.EscapeForJS(true),
+	jsontext.PreserveRawStrings(true),
 )
 
 type Breadcrumb struct {
@@ -18,9 +26,9 @@ type Breadcrumb struct {
 }
 
 type Envelope struct {
-	Data        json.RawMessage `json:"data"`
-	Breadcrumbs []Breadcrumb    `json:"breadcrumbs,omitempty"`
-	Pagination  json.RawMessage `json:"pagination,omitempty"`
+	Data        jsontext.Value `json:"data"`
+	Breadcrumbs []Breadcrumb   `json:"breadcrumbs,omitempty"`
+	Pagination  jsontext.Value `json:"pagination,omitzero"`
 }
 
 type Printer struct {
@@ -104,7 +112,7 @@ func (pr *Printer) terminalWidth() int {
 	return fallbackWidth
 }
 
-func (pr *Printer) Print(data json.RawMessage, breadcrumbs []Breadcrumb) {
+func (pr *Printer) Print(data jsontext.Value, breadcrumbs []Breadcrumb) {
 	if pr.Toon {
 		pr.printToon(data, nil)
 		return
@@ -124,7 +132,7 @@ func (pr *Printer) Print(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	pr.printBreadcrumbs(breadcrumbs)
 }
 
-func (pr *Printer) PrintWithPagination(data, pagination json.RawMessage, breadcrumbs []Breadcrumb) {
+func (pr *Printer) PrintWithPagination(data, pagination jsontext.Value, breadcrumbs []Breadcrumb) {
 	if pr.Toon {
 		pr.printToon(data, pagination)
 		return
@@ -145,7 +153,7 @@ func (pr *Printer) PrintWithPagination(data, pagination json.RawMessage, breadcr
 	pr.printBreadcrumbs(breadcrumbs)
 }
 
-func (pr *Printer) PrintTable(data json.RawMessage, headers []string, rows [][]interface{}, breadcrumbs []Breadcrumb) {
+func (pr *Printer) PrintTable(data jsontext.Value, headers []string, rows [][]interface{}, breadcrumbs []Breadcrumb) {
 	if pr.Toon {
 		pr.printToon(data, nil)
 		return
@@ -177,7 +185,7 @@ func (pr *Printer) PrintMessage(msg string) {
 	}
 
 	if pr.UseJSON() {
-		data, _ := json.Marshal(map[string]string{"message": msg})
+		data, _ := json.Marshal(map[string]string{"message": msg}, JSONOptions)
 		_, _ = fmt.Fprintln(pr.w(), string(data))
 		return
 	}
@@ -185,7 +193,7 @@ func (pr *Printer) PrintMessage(msg string) {
 	_, _ = fmt.Fprintln(pr.w(), msg)
 }
 
-func (pr *Printer) PrintQuiet(data json.RawMessage, breadcrumbs []Breadcrumb) {
+func (pr *Printer) PrintQuiet(data jsontext.Value, breadcrumbs []Breadcrumb) {
 	if pr.Quiet {
 		if id := extractIdentifier(data); id != "" {
 			_, _ = fmt.Fprintln(pr.w(), id)
@@ -196,15 +204,15 @@ func (pr *Printer) PrintQuiet(data json.RawMessage, breadcrumbs []Breadcrumb) {
 	pr.Print(data, breadcrumbs)
 }
 
-func extractIdentifier(data json.RawMessage) string {
-	var raw map[string]json.RawMessage
+func extractIdentifier(data jsontext.Value) string {
+	var raw map[string]jsontext.Value
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return ""
 	}
 
 	if len(raw) == 1 {
 		for _, v := range raw {
-			var inner map[string]json.RawMessage
+			var inner map[string]jsontext.Value
 			if json.Unmarshal(v, &inner) == nil {
 				raw = inner
 			}
@@ -223,13 +231,17 @@ func extractIdentifier(data json.RawMessage) string {
 	return ""
 }
 
-func (pr *Printer) printEnvelope(data json.RawMessage, breadcrumbs []Breadcrumb, pagination json.RawMessage) {
+func (pr *Printer) printEnvelope(data jsontext.Value, breadcrumbs []Breadcrumb, pagination jsontext.Value) {
 	envelope := Envelope{Data: data, Breadcrumbs: breadcrumbs, Pagination: pagination}
-	out, _ := json.MarshalIndent(envelope, "", "  ")
+	out, err := json.Marshal(envelope, JSONOptions, jsontext.WithIndent("  "))
+	if err != nil {
+		_, _ = fmt.Fprintln(pr.w(), string(data))
+		return
+	}
 	_, _ = fmt.Fprintln(pr.w(), string(out))
 }
 
-func (pr *Printer) printPretty(data json.RawMessage) {
+func (pr *Printer) printPretty(data jsontext.Value) {
 	var rows []map[string]interface{}
 	if err := json.Unmarshal(data, &rows); err == nil {
 		if len(rows) == 0 {
@@ -238,7 +250,7 @@ func (pr *Printer) printPretty(data json.RawMessage) {
 		}
 		flattened, answers := flattenLabelValues(rows)
 		if pr.Verbose || pr.tableUninformative(flattened, answers) {
-			var raws []json.RawMessage
+			var raws []jsontext.Value
 			if err := json.Unmarshal(data, &raws); err == nil && len(raws) == len(rows) {
 				pr.printRecordBlocks(raws, rows)
 				return
@@ -261,7 +273,7 @@ func (pr *Printer) printPretty(data json.RawMessage) {
 	_, _ = fmt.Fprintln(pr.w(), string(data))
 }
 
-func (pr *Printer) printToon(data, pagination json.RawMessage) {
+func (pr *Printer) printToon(data, pagination jsontext.Value) {
 	out, err := encodeToon(data, pagination)
 	if err != nil {
 		_, _ = fmt.Fprintln(pr.w(), string(data))
@@ -270,7 +282,7 @@ func (pr *Printer) printToon(data, pagination json.RawMessage) {
 	_, _ = fmt.Fprintln(pr.w(), out)
 }
 
-func encodeToon(data, pagination json.RawMessage) (string, error) {
+func encodeToon(data, pagination jsontext.Value) (string, error) {
 	var decodedData interface{}
 	if err := json.Unmarshal(data, &decodedData); err != nil {
 		return "", err
@@ -289,12 +301,12 @@ func encodeToon(data, pagination json.RawMessage) (string, error) {
 	return gotoon.Encode(envelope)
 }
 
-func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
+func (pr *Printer) printPaginationSummary(pagination jsontext.Value) {
 	if pagination == nil {
 		return
 	}
 
-	var parsed map[string]json.RawMessage
+	var parsed map[string]jsontext.Value
 	if err := json.Unmarshal(pagination, &parsed); err != nil {
 		return
 	}
@@ -306,7 +318,7 @@ func (pr *Printer) printPaginationSummary(pagination json.RawMessage) {
 	_, _ = fmt.Fprintf(pr.w(), "\nPage %d of %d (%d total records)\n", page, totalPages, total)
 }
 
-func IntFrom(parsed map[string]json.RawMessage, keys ...string) int {
+func IntFrom(parsed map[string]jsontext.Value, keys ...string) int {
 	for _, key := range keys {
 		raw, ok := parsed[key]
 		if !ok {

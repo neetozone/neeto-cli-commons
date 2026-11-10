@@ -1,7 +1,7 @@
 package client
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/auth"
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/auth"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func subdomainProduct() config.Product {
@@ -204,6 +204,27 @@ func TestPost(t *testing.T) {
 	}
 	if string(data) != `{"sid":"abc"}` {
 		t.Errorf("Post() = %s", string(data))
+	}
+}
+
+func TestPost_SendsNilSlicesAndMapsAsNull(t *testing.T) {
+	var received string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		received = string(body)
+	}))
+	defer server.Close()
+
+	body := struct {
+		Tags []string          `json:"tags"`
+		Meta map[string]string `json:"meta"`
+	}{}
+	if _, err := newTestClient(server).Post("/items", body); err != nil {
+		t.Fatalf("Post() error = %v", err)
+	}
+
+	if received != "{\"tags\":null,\"meta\":null}\n" {
+		t.Errorf("request body = %q", received)
 	}
 }
 

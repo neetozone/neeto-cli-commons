@@ -2,7 +2,8 @@ package output
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"sort"
 	"strings"
@@ -10,32 +11,30 @@ import (
 
 type field struct {
 	key   string
-	raw   json.RawMessage
+	raw   jsontext.Value
 	value interface{}
 }
 
-func decodeFields(data json.RawMessage) ([]field, bool) {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	t, err := dec.Token()
-	if err != nil || t != json.Delim('{') {
+func decodeFields(data jsontext.Value) ([]field, bool) {
+	dec := jsontext.NewDecoder(bytes.NewReader(data))
+	t, err := dec.ReadToken()
+	if err != nil || t.Kind() != '{' {
 		return nil, false
 	}
 
 	var fields []field
-	for dec.More() {
-		t, err := dec.Token()
+	for dec.PeekKind() != '}' {
+		t, err := dec.ReadToken()
 		if err != nil {
 			return nil, false
 		}
-		key, ok := t.(string)
-		if !ok {
-			return nil, false
-		}
+		key := t.String()
 
-		var raw json.RawMessage
-		if err := dec.Decode(&raw); err != nil {
+		raw, err := dec.ReadValue()
+		if err != nil {
 			return nil, false
 		}
+		raw = raw.Clone()
 		var value interface{}
 		if err := json.Unmarshal(raw, &value); err != nil {
 			return nil, false
@@ -45,7 +44,7 @@ func decodeFields(data json.RawMessage) ([]field, bool) {
 	return fields, true
 }
 
-func singleNestedObject(data json.RawMessage) (json.RawMessage, bool) {
+func singleNestedObject(data jsontext.Value) (jsontext.Value, bool) {
 	fields, ok := decodeFields(data)
 	if !ok || len(fields) != 1 {
 		return nil, false
@@ -56,7 +55,7 @@ func singleNestedObject(data json.RawMessage) (json.RawMessage, bool) {
 	return nil, false
 }
 
-func (pr *Printer) printObject(data json.RawMessage, depth int) {
+func (pr *Printer) printObject(data jsontext.Value, depth int) {
 	fields, ok := decodeFields(data)
 	if !ok {
 		pr.printIndentedJSON(data, depth)
@@ -115,7 +114,7 @@ func (pr *Printer) expand(f field, depth int) {
 	}
 }
 
-func (pr *Printer) printArray(data json.RawMessage, depth int) {
+func (pr *Printer) printArray(data jsontext.Value, depth int) {
 	var rows []map[string]interface{}
 	if err := json.Unmarshal(data, &rows); err == nil && len(rows) > 0 {
 		pr.printTable(rows, nil, depth)
@@ -173,7 +172,7 @@ func responseLabel(obj map[string]interface{}) string {
 	return ""
 }
 
-func (pr *Printer) printRecordBlocks(raws []json.RawMessage, rows []map[string]interface{}) {
+func (pr *Printer) printRecordBlocks(raws []jsontext.Value, rows []map[string]interface{}) {
 	for i := range rows {
 		if i > 0 {
 			_, _ = fmt.Fprintln(pr.w())
@@ -226,9 +225,9 @@ func (pr *Printer) orderBlockFields(fields []field, row map[string]interface{}) 
 }
 
 func (pr *Printer) printIndentedJSON(v interface{}, indent int) {
-	out, err := json.MarshalIndent(v, "", "  ")
+	out, err := json.Marshal(v, JSONOptions, jsontext.WithIndent("  "))
 	if err != nil {
-		if raw, ok := v.(json.RawMessage); ok {
+		if raw, ok := v.(jsontext.Value); ok {
 			_, _ = fmt.Fprintf(pr.w(), "%s%s\n", indentPrefix(indent), string(raw))
 		}
 		return

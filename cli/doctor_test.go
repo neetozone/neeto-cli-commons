@@ -2,13 +2,14 @@ package cli
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/neetozone/neeto-cli-commons/auth"
+	"github.com/neetozone/neeto-cli-commons/v2/auth"
 )
 
 func decodeChecks(t *testing.T, raw []byte) []checkResult {
@@ -92,7 +93,7 @@ func TestDoctor_JSONEmitsStructuredChecks(t *testing.T) {
 	}
 
 	var envelope struct {
-		Data json.RawMessage `json:"data"`
+		Data jsontext.Value `json:"data"`
 	}
 	if err := json.Unmarshal(out.Bytes(), &envelope); err != nil {
 		t.Fatalf("doctor --json did not emit an envelope: %v\n%s", err, out.String())
@@ -131,6 +132,9 @@ func TestDoctor_QuietEmitsTheRawChecks(t *testing.T) {
 	}
 	if !checks[1].Skipped {
 		t.Errorf("expected the connection check to be skipped, got %+v", checks[1])
+	}
+	if strings.Contains(out.String(), `"skipped":false`) {
+		t.Errorf("a check that ran must leave skipped out, got:\n%s", out.String())
 	}
 }
 

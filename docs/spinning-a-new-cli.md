@@ -48,7 +48,7 @@ homebrew_tap: neetozone/homebrew-tap
 s3_bucket: neeto-downloads
 s3_path_prefix: cli/NeetoPlanner
 
-go_version: 1.26.1
+go_version: 1.27.3
 
 run_tidy: true
 run_git_init: true

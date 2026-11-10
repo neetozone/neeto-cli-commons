@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 func subdomainProduct() config.Product {
@@ -159,7 +159,7 @@ func TestCheckStatus_EscapesTokenInPath(t *testing.T) {
 	var gotPath string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.EscapedPath()
-		if err := json.NewEncoder(w).Encode(map[string]string{"status": "pending"}); err != nil {
+		if err := json.MarshalWrite(w, map[string]string{"status": "pending"}); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -189,7 +189,7 @@ func TestCreateSession(t *testing.T) {
 		if got := r.Header.Get("Content-Type"); got != "application/json" {
 			t.Errorf("Content-Type header = %q, want application/json", got)
 		}
-		if err := json.NewEncoder(w).Encode(map[string]string{"login_token": "abc123"}); err != nil {
+		if err := json.MarshalWrite(w, map[string]string{"login_token": "abc123"}); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	}))
@@ -295,7 +295,7 @@ func TestCheckStatus_Authenticated(t *testing.T) {
 		if r.URL.Path != "/api/cli/v1/sessions/tok123/status" {
 			t.Errorf("unexpected path %q", r.URL.Path)
 		}
-		if err := json.NewEncoder(w).Encode(map[string]string{
+		if err := json.MarshalWrite(w, map[string]string{
 			"status":        "authenticated",
 			"email":         "alice@example.com",
 			"session_token": "sess_xyz",
@@ -323,7 +323,7 @@ func TestCheckStatus_Authenticated(t *testing.T) {
 func TestCheckStatus_PendingAndExpired(t *testing.T) {
 	for _, want := range []string{"pending", "expired"} {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := json.NewEncoder(w).Encode(map[string]string{"status": want}); err != nil {
+			if err := json.MarshalWrite(w, map[string]string{"status": want}); err != nil {
 				t.Errorf("encode error: %v", err)
 			}
 		}))
@@ -343,7 +343,7 @@ func loginServer(t *testing.T, statusHandler http.HandlerFunc) *httptest.Server 
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/cli/v1/sessions" {
-			if err := json.NewEncoder(w).Encode(map[string]string{"login_token": "tok123"}); err != nil {
+			if err := json.MarshalWrite(w, map[string]string{"login_token": "tok123"}); err != nil {
 				t.Errorf("encode error: %v", err)
 			}
 			return
@@ -392,11 +392,11 @@ func TestLogin_ResetsErrorCountOnSuccess(t *testing.T) {
 				t.Errorf("write error: %v", err)
 			}
 		case n == 5:
-			if err := json.NewEncoder(w).Encode(map[string]string{"status": "pending"}); err != nil {
+			if err := json.MarshalWrite(w, map[string]string{"status": "pending"}); err != nil {
 				t.Errorf("encode error: %v", err)
 			}
 		default:
-			if err := json.NewEncoder(w).Encode(map[string]string{
+			if err := json.MarshalWrite(w, map[string]string{
 				"status":        "authenticated",
 				"email":         "alice@example.com",
 				"session_token": "sess_xyz",
@@ -431,7 +431,7 @@ func TestLogin_Expired(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := loginServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewEncoder(w).Encode(map[string]string{"status": "expired"}); err != nil {
+		if err := json.MarshalWrite(w, map[string]string{"status": "expired"}); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	})
@@ -449,7 +449,7 @@ func TestLogin_SingleHost_StoresWithoutSubdomain(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := loginServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewEncoder(w).Encode(map[string]string{
+		if err := json.MarshalWrite(w, map[string]string{
 			"status":        "authenticated",
 			"email":         "ops@example.com",
 			"session_token": "sess_deploy",
@@ -483,7 +483,7 @@ func TestLogin_TimesOut(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	server := loginServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if err := json.NewEncoder(w).Encode(map[string]string{"status": "pending"}); err != nil {
+		if err := json.MarshalWrite(w, map[string]string{"status": "pending"}); err != nil {
 			t.Errorf("encode error: %v", err)
 		}
 	})

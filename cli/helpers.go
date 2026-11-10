@@ -1,15 +1,16 @@
 package cli
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/neetozone/neeto-cli-commons/client"
-	"github.com/neetozone/neeto-cli-commons/output"
+	"github.com/neetozone/neeto-cli-commons/v2/client"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -31,8 +32,8 @@ func (a *App) Client(cmd *cobra.Command) (*client.Client, error) {
 	return client.New(a.Product, creds, a.Build.Version), nil
 }
 
-func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []output.Breadcrumb) {
-	var parsed map[string]json.RawMessage
+func (a *App) PrintList(data jsontext.Value, resourceKey string, breadcrumbs []output.Breadcrumb) {
+	var parsed map[string]jsontext.Value
 	if err := json.Unmarshal(data, &parsed); err != nil {
 		a.Printer.Print(data, breadcrumbs)
 		return
@@ -54,7 +55,7 @@ func (a *App) PrintList(data json.RawMessage, resourceKey string, breadcrumbs []
 	}
 }
 
-func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
+func inlinePagination(parsed map[string]jsontext.Value) jsontext.Value {
 	totalPages := output.IntFrom(parsed, "total_pages")
 	if totalPages == 0 {
 		return nil
@@ -74,11 +75,11 @@ func inlinePagination(parsed map[string]json.RawMessage) json.RawMessage {
 	return out
 }
 
-func (a *App) PrintResource(data json.RawMessage, breadcrumbs []output.Breadcrumb) {
+func (a *App) PrintResource(data jsontext.Value, breadcrumbs []output.Breadcrumb) {
 	a.Printer.Print(data, breadcrumbs)
 }
 
-func (a *App) PrintActionResult(data json.RawMessage, breadcrumbs []output.Breadcrumb) {
+func (a *App) PrintActionResult(data jsontext.Value, breadcrumbs []output.Breadcrumb) {
 	a.Printer.PrintQuiet(data, breadcrumbs)
 }
 

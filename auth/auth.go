@@ -2,7 +2,7 @@ package auth
 
 import (
 	"bytes"
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/neetozone/neeto-cli-commons/config"
+	"github.com/neetozone/neeto-cli-commons/v2/config"
 )
 
 const (
@@ -169,7 +169,7 @@ func (a *Auth) createSession(baseURL string) (string, error) {
 	var result struct {
 		LoginToken string `json:"login_token"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.UnmarshalRead(resp.Body, &result); err != nil {
 		return "", err
 	}
 	return result.LoginToken, nil

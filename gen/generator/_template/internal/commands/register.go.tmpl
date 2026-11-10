@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
 	"net/url"
 
-	"github.com/neetozone/neeto-cli-commons/cli"
-	"github.com/neetozone/neeto-cli-commons/client"
-	"github.com/neetozone/neeto-cli-commons/output"
+	"github.com/neetozone/neeto-cli-commons/v2/cli"
+	"github.com/neetozone/neeto-cli-commons/v2/client"
+	"github.com/neetozone/neeto-cli-commons/v2/output"
 	"github.com/spf13/cobra"
 )
 
@@ -28,11 +28,11 @@ func Register(a *cli.App) {
 
 func getClient(cmd *cobra.Command) (*client.Client, error) { return app.Client(cmd) }
 
-func printList(data json.RawMessage, resourceKey string, breadcrumbs []output.Breadcrumb) {
+func printList(data jsontext.Value, resourceKey string, breadcrumbs []output.Breadcrumb) {
 	app.PrintList(data, resourceKey, breadcrumbs)
 }
 
-func printResource(data json.RawMessage, breadcrumbs []output.Breadcrumb) {
+func printResource(data jsontext.Value, breadcrumbs []output.Breadcrumb) {
 	app.PrintResource(data, breadcrumbs)
 }
 
