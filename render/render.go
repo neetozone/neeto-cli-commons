@@ -241,14 +241,6 @@ func splitTap(tap string) (owner, repo string) {
 	return owner, repo
 }
 
-func goMinor(version string) string {
-	parts := strings.Split(version, ".")
-	if len(parts) < 2 {
-		return version
-	}
-	return parts[0] + "." + parts[1]
-}
-
 var bareSemver = regexp.MustCompile(`^\d+\.\d+`)
 
 func commonsRawBase(p config.Product) string {
