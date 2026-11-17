@@ -155,6 +155,24 @@ waiting on. The surface becomes reviewable and the plugin skill can describe
 it. Say so in the README, and in `internal/plugin/skill.md` tell the agent not
 to treat those failures as bugs to work around.
 
+### Shared role and permission commands
+
+neeto-commons-backend serves role and permission endpoints to every product
+under `/api/external/v2`. To give the CLI `roles list/create/update/delete` and
+`permissions list`, call `AddRoleCommands` in `cmd/<binary>/main.go` after
+`commands.Register(app)`:
+
+```go
+commands.Register(app)
+app.AddRoleCommands()
+app.Execute()
+```
+
+They always call `/api/external/v2`, whatever the product's `api_base_path` is.
+Leave them out if the product's backend doesn't serve the commons external API.
+If the product already has its own `roles` or `permissions` command, that one
+is kept.
+
 ## 8. Cut the first release
 
 Generated `VERSION` is `0.1.0`, so merging a PR labelled `major` produces

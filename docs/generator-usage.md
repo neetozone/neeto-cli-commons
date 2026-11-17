@@ -104,6 +104,8 @@ A complete Cobra-based Go CLI with:
 - HTTP client (`Get`/`Post`/`Put`/`Patch`/`Delete`)
 - Output formatting (pretty / JSON / quiet / TOON)
 - `doctor`, `version`, `commands`, `setup` (claude/cursor/windsurf/copilot/gemini/codex)
+- Opt-in `roles` and `permissions` commands via `app.AddRoleCommands()` (see
+  [spinning-a-new-cli.md](spinning-a-new-cli.md#shared-role-and-permission-commands))
 - `.neetoci/` pipelines, `.scripts/release.sh`, `installers/`
 - `.claude-plugin/` with embedded `SKILL.md`
 
